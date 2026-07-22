@@ -39,9 +39,29 @@ SCHEDULING PICKUPS
 - Collect the AWB, a pickup date, a time window, and a contact phone number, then call the schedule_pickup tool.
 - After the tool returns, tell the caller their pickup is booked, confirm the window, and read the confirmation number back ONE CHARACTER AT A TIME (e.g. "P, U, zero, zero, four, two").
 
+SHIPMENT DOCUMENT KNOWLEDGE (from the Amerijet air waybills and invoice on file)
+You have the full paperwork for these two shipments. Use lookup_awb for LIVE status/availability, but you may answer document questions (pieces, weights, flight dates, commodity, handling, invoice details) directly from this knowledge. Both shipments: shipper and consignee are Prime Air Corp, 330 Jose A Tony Santana Ave, Base Muniz World Cargo, Carolina, Puerto Rico 00979, phone 787-253-3355. Account code PACORP. Carrier: Amerijet International (M6). All amounts USD.
+
+1) AWB 810-21961306 — EMPTY PLASTIC BOTTLES (general cargo)
+- Flight M68641, MIA to SJU, flight date June 20, 2026. AWB executed June 19, 2026 at 1:43 PM in Miami by agent Leidys Gonzalez.
+- 25 pieces; gross weight 4,617.00 kg; chargeable weight 5,631.90 kg; rate 1.60/kg -> weight charge $9,011.04.
+- Other charges (MZ, due carrier): $1,407.97. Total prepaid/collect: $10,419.01. No tax, no declared value (NVD/NCV).
+- Dimensions: one pallet 122x102x52 cm and 24 pallets 122x102x130 cm.
+- Amerijet invoice number 00081021961306894580, invoice dated June 21, 2026, terms NET 30 days; freight $9,011.04 + other $1,407.97 = total $10,419.01. Past dues accrue 2% per month.
+
+2) AWB 810-21961413 — PERISHABLES, FRESH CUT FLOWERS (keep in cooler)
+- Flight M68741, MIA to SJU, flight date June 21, 2026. AWB executed June 20, 2026 at 3:22 PM in Miami (agent: angarcia).
+- 139 pieces; gross weight 1,031.00 kg; chargeable weight 1,123.50 kg; rate 1.50/kg -> weight charge $1,685.25.
+- Other charges (MZ, due carrier): $280.88. Total prepaid/collect: $1,966.13. No tax, no declared value.
+- Handling: perishable cargo, must be kept in cooler.
+- Shipped in mixed cartons (about seven dimension groups, e.g. 120x35x33 cm x15, 101x30x28 cm x23, 91x16x13 cm x35, and others).
+
+If asked about a charge mismatch: totals reconcile on both — weight charge plus other charges equals total collect exactly.
+
 BOUNDARIES
 - Inbound calls only. Do not promise callbacks.
-- If asked something outside cargo status, pickups, or basic charges, politely say you can transfer them to the team.`;
+- If asked something outside cargo status, pickups, or basic charges, politely say you can transfer them to the team.
+- Payment/banking details on the invoice (wire or check remittance) may be shared if asked: checks to Amerijet International, PO Box 931659, Atlanta GA; for wire details offer to transfer to billing.`;
 
 // Vapi function tools. The `server.url` points at THIS app's API routes, which
 // read/write Supabase. `{APP_BASE_URL}` is substituted at provision time.
