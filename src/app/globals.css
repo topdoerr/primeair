@@ -4,7 +4,7 @@
 
 :root {
   /* Semantic design tokens — Prime Air cerulean + slate neutrals + green accent. */
-  --background: 245 247 250; /* soft cool gray */
+  --background: 255 255 255; /* white */
   --foreground: 15 23 42; /* slate-900 */
   --card: 255 255 255;
   --card-foreground: 15 23 42;
