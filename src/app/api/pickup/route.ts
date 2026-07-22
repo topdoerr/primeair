@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
+import { extractToolCalls, toolResults } from '@/lib/vapi-tools';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -7,10 +8,10 @@ export const dynamic = 'force-dynamic';
 // ---------------------------------------------------------------------------
 // POST /api/pickup
 //   { masterBillNumber, windowStart, windowEnd, contact?, vapiCallId? }
-//   -> { ok, pickup }
 //
 // Scheduling tool the assistant calls to book a pickup/delivery window.
-// Pilot scope: writes to Supabase only (no external calendar sync).
+// Handles the Vapi tool-call envelope (returns { results: [...] }) and a plain
+// body for direct testing. Pilot scope: Supabase only (no calendar sync).
 // ---------------------------------------------------------------------------
 
 function normalizeAwb(input: string): string | null {
@@ -21,57 +22,47 @@ function normalizeAwb(input: string): string | null {
   return null;
 }
 
-export async function POST(req: Request) {
-  let body: {
-    masterBillNumber?: string;
-    windowStart?: string;
-    windowEnd?: string;
-    contact?: string;
-    vapiCallId?: string;
-    source?: string;
-  };
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
+interface PickupArgs {
+  masterBillNumber?: string;
+  windowStart?: string;
+  windowEnd?: string;
+  contact?: string;
+  vapiCallId?: string;
+  source?: string;
+}
 
-  const mbn = normalizeAwb(body.masterBillNumber ?? '');
+type PickupOutcome =
+  | { ok: true; spoken: string; confirmationNumber: string; pickup: unknown }
+  | { ok: false; spoken: string; status: number };
+
+async function schedulePickup(args: PickupArgs): Promise<PickupOutcome> {
+  const mbn = normalizeAwb(args.masterBillNumber ?? '');
   if (!mbn) {
-    return NextResponse.json(
-      { error: 'A valid air waybill number (810-XXXXXXXX) is required.' },
-      { status: 400 },
-    );
+    return { ok: false, status: 400, spoken: 'A valid air waybill number is required.' };
   }
 
-  const start = body.windowStart ? new Date(body.windowStart) : null;
-  const end = body.windowEnd ? new Date(body.windowEnd) : null;
+  const start = args.windowStart ? new Date(args.windowStart) : null;
+  const end = args.windowEnd ? new Date(args.windowEnd) : null;
   if (!start || Number.isNaN(start.getTime()) || !end || Number.isNaN(end.getTime())) {
-    return NextResponse.json(
-      { error: 'windowStart and windowEnd must be valid ISO timestamps.' },
-      { status: 400 },
-    );
+    return {
+      ok: false,
+      status: 400,
+      spoken: 'I need a valid start and end time for the pickup window.',
+    };
   }
   if (end.getTime() <= start.getTime()) {
-    return NextResponse.json(
-      { error: 'windowEnd must be after windowStart.' },
-      { status: 400 },
-    );
+    return { ok: false, status: 400, spoken: 'The pickup window end must be after the start.' };
   }
 
   const supabase = createAdminClient();
 
-  // Guard: the AWB must exist (FK would reject anyway, but give a clear error).
   const { data: awb } = await supabase
     .from('air_waybills')
     .select('master_bill_number')
     .eq('master_bill_number', mbn)
     .maybeSingle();
   if (!awb) {
-    return NextResponse.json(
-      { error: `No air waybill found for ${mbn}.` },
-      { status: 404 },
-    );
+    return { ok: false, status: 404, spoken: `I could not find any shipment for ${mbn}.` };
   }
 
   const { data, error } = await supabase
@@ -80,30 +71,52 @@ export async function POST(req: Request) {
       master_bill_number: mbn,
       window_start: start.toISOString(),
       window_end: end.toISOString(),
-      contact: body.contact ?? null,
+      contact: args.contact ?? null,
       status: 'SCHEDULED',
-      source: body.source === 'dashboard' ? 'dashboard' : 'voice_agent',
-      vapi_call_id: body.vapiCallId ?? null,
+      source: args.source === 'dashboard' ? 'dashboard' : 'voice_agent',
+      vapi_call_id: args.vapiCallId ?? null,
     })
     .select()
     .single();
 
-  if (error) {
-    return NextResponse.json({ error: 'Could not create pickup.' }, { status: 500 });
+  if (error) return { ok: false, status: 500, spoken: 'I could not create the pickup.' };
+
+  const confirmationNumber = `PU-${String(data.number ?? 0).padStart(4, '0')}`;
+  const spoken =
+    `Pickup for ${mbn} is scheduled from ${start.toLocaleString('en-US')} ` +
+    `to ${end.toLocaleString('en-US')}. Your confirmation number is ${confirmationNumber}.`;
+
+  return { ok: true, spoken, confirmationNumber, pickup: data };
+}
+
+export async function POST(req: Request) {
+  let body: any;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  // Short, speakable confirmation number (e.g. PU-0042).
-  const confirmationNumber = `PU-${String(data.number ?? 0).padStart(4, '0')}`;
+  // Vapi tool-call path.
+  const toolCalls = extractToolCalls(body);
+  if (toolCalls.length > 0) {
+    const results = [];
+    for (const call of toolCalls) {
+      const outcome = await schedulePickup(call.args as PickupArgs);
+      results.push({ toolCallId: call.id, result: outcome.spoken });
+    }
+    return NextResponse.json(toolResults(results));
+  }
 
-  const spoken =
-    `Pickup for ${mbn} is scheduled from ` +
-    `${start.toLocaleString('en-US')} to ${end.toLocaleString('en-US')}. ` +
-    `Your confirmation number is ${confirmationNumber}.`;
-
+  // Plain-body path (direct testing).
+  const outcome = await schedulePickup(body as PickupArgs);
+  if (!outcome.ok) {
+    return NextResponse.json({ error: outcome.spoken }, { status: outcome.status });
+  }
   return NextResponse.json({
     ok: true,
-    confirmationNumber,
-    message: spoken,
-    pickup: data,
+    confirmationNumber: outcome.confirmationNumber,
+    message: outcome.spoken,
+    pickup: outcome.pickup,
   });
 }
