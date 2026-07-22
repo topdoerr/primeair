@@ -6,10 +6,16 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Middleware already gated this route; guard here too so a transient auth
+  // error renders the shell signed-out rather than 500-ing the dashboard.
+  let user: { email?: string } | null = null;
+  try {
+    const supabase = createClient();
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    user = null;
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-50">
