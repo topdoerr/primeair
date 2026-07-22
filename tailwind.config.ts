@@ -4,7 +4,19 @@ const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-geist-mono)', 'ui-monospace', 'monospace'],
+      },
       colors: {
+        background: 'rgb(var(--background) / <alpha-value>)',
+        foreground: 'rgb(var(--foreground) / <alpha-value>)',
+        card: 'rgb(var(--card) / <alpha-value>)',
+        muted: 'rgb(var(--muted) / <alpha-value>)',
+        'muted-foreground': 'rgb(var(--muted-foreground) / <alpha-value>)',
+        border: 'rgb(var(--border) / <alpha-value>)',
+        sidebar: 'rgb(var(--sidebar) / <alpha-value>)',
+        'sidebar-foreground': 'rgb(var(--sidebar-foreground) / <alpha-value>)',
         // Prime Global Logistics brand — cerulean blue (globe + wordmark).
         brand: {
           50: '#edf7fc',
