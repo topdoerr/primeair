@@ -64,7 +64,12 @@ function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
       <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
         <div className="mb-6">
-          <div className="text-lg font-semibold text-brand-900">Prime Air Corp</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://primeaircorp.com/wp-content/uploads/2025/03/Prime-Global-Logistics-Logo-e1753980018767.png"
+            alt="Prime Air Corp"
+            className="mb-3 h-11 w-auto"
+          />
           <div className="text-sm text-slate-500">Cargo operations dashboard</div>
         </div>
         <form onSubmit={onSubmit} className="space-y-4">

@@ -29,7 +29,13 @@ export function Sidebar({ userEmail }: { userEmail?: string | null }) {
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-slate-200 bg-white">
       <div className="px-5 py-5">
-        <div className="text-base font-semibold text-brand-900">Prime Air Corp</div>
+        {/* Hotlinked from the company site; swap for /logo.png to self-host. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="https://primeaircorp.com/wp-content/uploads/2025/03/Prime-Global-Logistics-Logo-e1753980018767.png"
+          alt="Prime Air Corp"
+          className="mb-2 h-9 w-auto"
+        />
         <div className="text-xs text-slate-500">MIA → SJU air cargo</div>
       </div>
       <nav className="flex-1 space-y-1 px-3">
