@@ -45,6 +45,20 @@ function transcriptOf(call: VapiCall): string {
   );
 }
 
+// Vapi exposes the recording in a few shapes depending on the event/version.
+function recordingOf(call: VapiCall): string | null {
+  return (
+    call.recordingUrl ||
+    call.stereoRecordingUrl ||
+    call.artifact?.recordingUrl ||
+    call.artifact?.stereoRecordingUrl ||
+    call.artifact?.recording?.url ||
+    call.artifact?.recording?.stereoUrl ||
+    call.artifact?.recording?.mono?.combinedUrl ||
+    null
+  );
+}
+
 function durationSeconds(call: VapiCall): number | null {
   if (!call.startedAt || !call.endedAt) return null;
   const s = new Date(call.startedAt).getTime();
@@ -64,6 +78,7 @@ export interface CallRow {
   detected_intent: string;
   referenced_awb: string | null;
   outcome: string;
+  recording_url: string | null;
   raw: unknown;
 }
 
@@ -88,6 +103,7 @@ export function mapCall(call: VapiCall): CallRow {
     detected_intent: intent,
     referenced_awb: referencedAwb || null,
     outcome: deriveOutcome(call, transcript),
+    recording_url: recordingOf(call),
     raw: call,
   };
 }

@@ -135,3 +135,15 @@ values
    (now() + interval '1 day')::date + time '11:00',
    '+17875559876', 'SCHEDULED', 'voice_agent', 'demo-call-0002')
 on conflict do nothing;
+
+-- --- tickets (demo; auto-created per call in production) --------------------
+insert into public.tickets
+  (vapi_call_id, master_bill_number, subject, category, priority, status, description)
+values
+  ('demo-call-0001', '810-21961413', 'AWB status inquiry — 810-21961413', 'awb_status', 'low', 'closed',
+   'Caller confirmed flight M68741 (MIA->SJU), fresh cut flowers, arrived and available for pickup. Self-served.'),
+  ('demo-call-0002', '810-21961306', 'Pickup scheduling — 810-21961306', 'schedule_pickup', 'normal', 'open',
+   'Caller requested pickup for tomorrow morning; window 9-11 AM booked by the agent. Confirm dock availability.'),
+  ('demo-call-0003', '810-21961500', 'Invoice/charges question — 810-21961500', 'invoice_question', 'high', 'open',
+   'Caller disputed total collect vs line items on invoice INV-M6-778533. Transferred to billing; follow up on reconciliation (report FLAGGED).')
+on conflict (vapi_call_id) do nothing;

@@ -54,6 +54,13 @@ const BADGE_STYLES: Record<string, string> = {
   IN_TRANSIT: 'bg-amber-50 text-amber-700 ring-amber-200',
   PICKED_UP: 'bg-slate-100 text-slate-600 ring-slate-200',
   SCHEDULED: 'bg-brand-50 text-brand-700 ring-brand-200',
+  // ticket status
+  OPEN: 'bg-amber-50 text-amber-700 ring-amber-200',
+  CLOSED: 'bg-slate-100 text-slate-500 ring-slate-200',
+  // ticket priority
+  HIGH: 'bg-red-50 text-red-700 ring-red-200',
+  NORMAL: 'bg-sky-50 text-sky-700 ring-sky-200',
+  LOW: 'bg-slate-100 text-slate-500 ring-slate-200',
 };
 
 export function Badge({ children }: { children: string }) {

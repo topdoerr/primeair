@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { listCalls, vapiConfigured } from '@/lib/vapi';
 import { mapCall } from '@/lib/call-mapping';
+import { ensureTicketsForCalls } from '@/lib/tickets';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -52,5 +53,13 @@ export async function POST() {
     return NextResponse.json({ error: `Sync write failed: ${error.message}` }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, synced: rows.length });
+  // Backfill follow-up tickets for the synced calls (idempotent per call).
+  let ticketsCreated = 0;
+  try {
+    ticketsCreated = await ensureTicketsForCalls(admin, rows);
+  } catch {
+    // Non-fatal — calls are already saved.
+  }
+
+  return NextResponse.json({ ok: true, synced: rows.length, ticketsCreated });
 }

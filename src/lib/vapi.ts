@@ -108,7 +108,15 @@ export interface VapiCall {
   endedAt?: string;
   // Vapi provides a rolled-up transcript on the artifact/message list.
   transcript?: string;
-  artifact?: { transcript?: string; messages?: unknown[] } | null;
+  recordingUrl?: string;
+  stereoRecordingUrl?: string;
+  artifact?: {
+    transcript?: string;
+    messages?: unknown[];
+    recordingUrl?: string;
+    stereoRecordingUrl?: string;
+    recording?: { url?: string; stereoUrl?: string; mono?: { combinedUrl?: string } };
+  } | null;
   analysis?: {
     summary?: string;
     structuredData?: Record<string, unknown>;

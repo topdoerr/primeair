@@ -96,6 +96,8 @@ export function buildAssistantPayload(appBaseUrl: string, serverSecret?: string)
       messages: [{ role: 'system', content: SYSTEM_PROMPT }],
       tools: buildTools(appBaseUrl),
     },
+    // Record every call so staff can listen back from the dashboard.
+    artifactPlan: { recordingEnabled: true },
     // Where Vapi posts end-of-call reports (synced into Supabase).
     server: {
       url: `${appBaseUrl}/api/vapi/webhook`,

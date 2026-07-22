@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { mapCall } from '@/lib/call-mapping';
+import { ensureTicketsForCalls } from '@/lib/tickets';
 import type { VapiCall } from '@/lib/vapi';
 
 export const runtime = 'nodejs';
@@ -57,13 +58,20 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient();
-  const { error } = await admin
-    .from('calls')
-    .upsert(mapCall(call), { onConflict: 'vapi_call_id' });
+  const row = mapCall(call);
+  const { error } = await admin.from('calls').upsert(row, { onConflict: 'vapi_call_id' });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, callId: call.id });
+  // Auto-create a follow-up ticket for this call (idempotent per call).
+  let ticketCreated = 0;
+  try {
+    ticketCreated = await ensureTicketsForCalls(admin, [row]);
+  } catch {
+    // Don't fail the webhook if ticketing hiccups; the call is already saved.
+  }
+
+  return NextResponse.json({ ok: true, callId: call.id, ticketCreated });
 }

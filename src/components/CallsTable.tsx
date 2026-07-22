@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Badge, IntentBadge } from '@/components/ui';
+import { CloseIcon, PlayIcon } from '@/components/icons';
 import type { CallRecord } from '@/lib/types';
 
 function fmtTime(iso: string | null): string {
@@ -94,7 +95,17 @@ export function CallsTable({ calls }: { calls: CallRecord[] }) {
                   <td className="px-4 py-3 font-mono text-xs text-slate-600">
                     {c.referenced_awb ?? '—'}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{fmtDuration(c.duration)}</td>
+                  <td className="px-4 py-3 text-slate-600">
+                    <span className="inline-flex items-center gap-1.5">
+                      {fmtDuration(c.duration)}
+                      {c.recording_url && (
+                        <PlayIcon
+                          className="h-3.5 w-3.5 text-brand-500"
+                          aria-label="Recording available"
+                        />
+                      )}
+                    </span>
+                  </td>
                   <td className="px-4 py-3">
                     {c.outcome ? <Badge>{c.outcome.toUpperCase()}</Badge> : '—'}
                   </td>
@@ -123,7 +134,7 @@ export function CallsTable({ calls }: { calls: CallRecord[] }) {
                 className="rounded-md p-1 text-slate-400 hover:bg-slate-100"
                 aria-label="Close"
               >
-                ✕
+                <CloseIcon className="h-4 w-4" />
               </button>
             </div>
             <div className="grid grid-cols-2 gap-3 px-5 py-4 text-sm">
@@ -141,6 +152,26 @@ export function CallsTable({ calls }: { calls: CallRecord[] }) {
                 }
               />
               <Meta label="Vapi call id" value={<span className="font-mono text-xs">{selected.vapi_call_id}</span>} />
+            </div>
+            <div className="border-t border-slate-200 px-5 py-4">
+              <div className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase text-slate-400">
+                <PlayIcon className="h-3.5 w-3.5" />
+                Recording
+              </div>
+              {selected.recording_url ? (
+                <audio
+                  controls
+                  preload="none"
+                  src={selected.recording_url}
+                  className="w-full"
+                >
+                  Your browser does not support audio playback.
+                </audio>
+              ) : (
+                <p className="text-sm text-slate-400">
+                  No recording available for this call.
+                </p>
+              )}
             </div>
             <div className="flex-1 overflow-y-auto border-t border-slate-200 px-5 py-4">
               <div className="mb-2 text-xs font-medium uppercase text-slate-400">Transcript</div>

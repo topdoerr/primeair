@@ -31,7 +31,21 @@ export interface CallRecord {
   detected_intent: string | null;
   referenced_awb: string | null;
   outcome: string | null;
+  recording_url: string | null;
   raw: unknown;
+  created_at: string;
+}
+
+export interface Ticket {
+  id: string;
+  number: number;
+  vapi_call_id: string | null;
+  master_bill_number: string | null;
+  subject: string;
+  category: string | null;
+  priority: string; // low | normal | high
+  status: string; // open | closed
+  description: string | null;
   created_at: string;
 }
 

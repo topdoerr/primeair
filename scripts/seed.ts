@@ -204,6 +204,41 @@ async function main() {
     if (error) throw error;
   }
 
+  // tickets (one per demo call; auto-created per call in production)
+  const ticketRows = [
+    {
+      vapi_call_id: 'demo-call-0001',
+      master_bill_number: '810-21961413',
+      subject: 'AWB status inquiry — 810-21961413',
+      category: 'awb_status',
+      priority: 'low',
+      status: 'closed',
+      description:
+        'Caller confirmed flight M68741 (MIA->SJU), fresh cut flowers, arrived and available for pickup. Self-served.',
+    },
+    {
+      vapi_call_id: 'demo-call-0002',
+      master_bill_number: '810-21961306',
+      subject: 'Pickup scheduling — 810-21961306',
+      category: 'schedule_pickup',
+      priority: 'normal',
+      status: 'open',
+      description:
+        'Caller requested pickup for tomorrow morning; window 9-11 AM booked by the agent. Confirm dock availability.',
+    },
+    {
+      vapi_call_id: 'demo-call-0003',
+      master_bill_number: '810-21961500',
+      subject: 'Invoice/charges question — 810-21961500',
+      category: 'invoice_question',
+      priority: 'high',
+      status: 'open',
+      description:
+        'Caller disputed total collect vs line items on invoice INV-M6-778533. Transferred to billing; follow up on reconciliation (report FLAGGED).',
+    },
+  ];
+  await upsert('tickets', ticketRows, 'vapi_call_id');
+
   console.log('✅ Seed complete.');
 }
 
