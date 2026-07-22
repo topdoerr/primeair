@@ -29,14 +29,9 @@ export function Sidebar({ userEmail }: { userEmail?: string | null }) {
   return (
     <aside className="flex w-64 shrink-0 flex-col bg-sidebar">
       <div className="px-5 pb-5 pt-6">
-        <div className="rounded-lg bg-white/95 px-3 py-2.5">
-          {/* Hotlinked from the company site; swap for /logo.png to self-host. */}
+        <div className="flex justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="https://primeaircorp.com/wp-content/uploads/2025/03/Prime-Global-Logistics-Logo-e1753980018767.png"
-            alt="Prime Air Corp"
-            className="h-8 w-auto"
-          />
+          <img src="/logo.png" alt="Prime Global Logistics" className="h-28 w-auto" />
         </div>
         <div className="mt-3 flex items-center gap-2 px-1">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium tracking-wide text-sidebar-foreground">
