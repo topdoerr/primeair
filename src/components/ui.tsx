@@ -47,9 +47,9 @@ export function KpiCard({
 }
 
 const BADGE_STYLES: Record<string, string> = {
-  RECONCILED: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  RECONCILED: 'bg-accent-50 text-accent-700 ring-accent-200',
   FLAGGED: 'bg-red-50 text-red-700 ring-red-200',
-  AVAILABLE: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  AVAILABLE: 'bg-accent-50 text-accent-700 ring-accent-200',
   ARRIVED: 'bg-sky-50 text-sky-700 ring-sky-200',
   IN_TRANSIT: 'bg-amber-50 text-amber-700 ring-amber-200',
   PICKED_UP: 'bg-slate-100 text-slate-600 ring-slate-200',
