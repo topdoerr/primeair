@@ -32,7 +32,7 @@ export function AssistantEditor({
       if (!res.ok) {
         setMsg({ ok: false, text: data.error ?? 'Update failed' });
       } else {
-        setMsg({ ok: true, text: 'Pushed to Vapi.' });
+        setMsg({ ok: true, text: 'Pushed to topdoer.' });
       }
     } catch (err) {
       setMsg({ ok: false, text: (err as Error).message });
@@ -72,7 +72,7 @@ export function AssistantEditor({
           disabled={saving || !dirty}
           className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
         >
-          {saving ? 'Pushing…' : 'Push updates to Vapi'}
+          {saving ? 'Pushing…' : 'Push changes to topdoer'}
         </button>
         {msg && (
           <span className={`text-sm ${msg.ok ? 'text-emerald-600' : 'text-red-600'}`}>
