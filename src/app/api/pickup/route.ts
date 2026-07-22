@@ -92,9 +92,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Could not create pickup.' }, { status: 500 });
   }
 
+  // Short, speakable confirmation number (e.g. PU-0042).
+  const confirmationNumber = `PU-${String(data.number ?? 0).padStart(4, '0')}`;
+
   const spoken =
     `Pickup for ${mbn} is scheduled from ` +
-    `${start.toLocaleString('en-US')} to ${end.toLocaleString('en-US')}.`;
+    `${start.toLocaleString('en-US')} to ${end.toLocaleString('en-US')}. ` +
+    `Your confirmation number is ${confirmationNumber}.`;
 
-  return NextResponse.json({ ok: true, message: spoken, pickup: data });
+  return NextResponse.json({
+    ok: true,
+    confirmationNumber,
+    message: spoken,
+    pickup: data,
+  });
 }

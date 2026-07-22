@@ -51,6 +51,7 @@ export interface Ticket {
 
 export interface Pickup {
   id: string;
+  number: number;
   master_bill_number: string;
   window_start: string;
   window_end: string;
