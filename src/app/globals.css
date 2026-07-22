@@ -3,8 +3,20 @@
 @tailwind utilities;
 
 :root {
-  --background: 248 250 252;
-  --foreground: 15 23 42;
+  /* Semantic design tokens — Prime Air cerulean + slate neutrals + green accent. */
+  --background: 245 247 250; /* soft cool gray */
+  --foreground: 15 23 42; /* slate-900 */
+  --card: 255 255 255;
+  --card-foreground: 15 23 42;
+  --muted: 241 245 249;
+  --muted-foreground: 100 116 139;
+  --border: 226 232 240;
+  --primary: 27 143 206; /* brand-500 cerulean */
+  --primary-foreground: 255 255 255;
+  --accent-token: 92 185 72; /* brand green */
+  --sidebar: 16 42 61; /* deep navy-teal derived from brand-900 */
+  --sidebar-foreground: 203 225 240;
+  --radius: 0.75rem;
 }
 
 body {
@@ -14,5 +26,5 @@ body {
 
 /* Simple utility for the transcript / XML mono blocks */
 .mono-block {
-  @apply whitespace-pre-wrap break-words rounded-md bg-slate-900 p-4 font-mono text-xs leading-relaxed text-slate-100;
+  @apply whitespace-pre-wrap break-words rounded-lg bg-slate-900 p-4 font-mono text-xs leading-relaxed text-slate-100;
 }

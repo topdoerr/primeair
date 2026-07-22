@@ -70,15 +70,18 @@ export default async function OverviewPage() {
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-1">
-          <div className="mb-3 text-sm font-semibold text-slate-900">Top intents today</div>
+          <div className="mb-4 text-sm font-semibold text-slate-900">Top intents today</div>
           {topIntents.length === 0 ? (
             <p className="text-sm text-slate-400">No calls recorded today.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {topIntents.map(([intent, count]) => (
-                <li key={intent} className="flex items-center justify-between text-sm">
+                <li
+                  key={intent}
+                  className="flex items-center justify-between rounded-lg bg-muted px-3 py-2.5 text-sm"
+                >
                   <IntentBadge intent={intent} />
-                  <span className="font-medium text-slate-700">{count}</span>
+                  <span className="font-semibold text-slate-700">{count}</span>
                 </li>
               ))}
             </ul>
@@ -86,10 +89,13 @@ export default async function OverviewPage() {
         </Card>
 
         <Card className="lg:col-span-2">
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between">
             <div className="text-sm font-semibold text-slate-900">Recent calls</div>
-            <Link href="/calls" className="text-xs text-brand-600 hover:underline">
-              View all →
+            <Link
+              href="/calls"
+              className="rounded-md px-2 py-1 text-xs font-medium text-brand-600 transition-colors hover:bg-brand-50"
+            >
+              {'View all →'}
             </Link>
           </div>
           {(recentCalls?.length ?? 0) === 0 ? (
@@ -99,24 +105,27 @@ export default async function OverviewPage() {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs uppercase text-slate-400">
-                  <th className="pb-2 font-medium">Caller</th>
-                  <th className="pb-2 font-medium">Intent</th>
-                  <th className="pb-2 font-medium">AWB</th>
-                  <th className="pb-2 font-medium">Outcome</th>
+                <tr className="text-left text-xs uppercase tracking-wider text-slate-400">
+                  <th className="pb-3 font-medium">Caller</th>
+                  <th className="pb-3 font-medium">Intent</th>
+                  <th className="pb-3 font-medium">AWB</th>
+                  <th className="pb-3 font-medium">Outcome</th>
                 </tr>
               </thead>
               <tbody>
                 {(recentCalls as CallRecord[]).map((c) => (
-                  <tr key={c.id} className="border-t border-slate-100">
-                    <td className="py-2 text-slate-700">{c.caller ?? '—'}</td>
-                    <td className="py-2">
+                  <tr
+                    key={c.id}
+                    className="border-t border-border transition-colors hover:bg-muted/60"
+                  >
+                    <td className="py-2.5 text-slate-700">{c.caller ?? '—'}</td>
+                    <td className="py-2.5">
                       <IntentBadge intent={c.detected_intent} />
                     </td>
-                    <td className="py-2 font-mono text-xs text-slate-600">
+                    <td className="py-2.5 font-mono text-xs text-slate-600">
                       {c.referenced_awb ?? '—'}
                     </td>
-                    <td className="py-2">
+                    <td className="py-2.5">
                       {c.outcome ? <Badge>{c.outcome.toUpperCase()}</Badge> : '—'}
                     </td>
                   </tr>
