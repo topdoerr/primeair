@@ -103,7 +103,8 @@ export default async function OverviewPage() {
               No calls yet. Sync from the Calls page or take a live call.
             </p>
           ) : (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[480px] text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wider text-slate-400">
                   <th className="pb-3 font-medium">Caller</th>
@@ -131,7 +132,8 @@ export default async function OverviewPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           )}
         </Card>
       </div>

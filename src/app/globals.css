@@ -14,7 +14,7 @@
   --primary: 27 143 206; /* brand-500 cerulean */
   --primary-foreground: 255 255 255;
   --accent-token: 92 185 72; /* brand green */
-  --sidebar: 16 42 61; /* deep navy-teal derived from brand-900 */
+  --sidebar: 10 25 61; /* dark blue */
   --sidebar-foreground: 203 225 240;
   --radius: 0.75rem;
 }
