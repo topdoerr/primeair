@@ -94,3 +94,19 @@ export function CloseIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function MenuIcon(props: IconProps) {
+  return (
+    <svg {...base(props)} aria-hidden>
+      <path d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  );
+}
+
+export function ChevronLeftIcon(props: IconProps) {
+  return (
+    <svg {...base(props)} aria-hidden>
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}

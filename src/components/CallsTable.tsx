@@ -61,8 +61,8 @@ export function CallsTable({ calls }: { calls: CallRecord[] }) {
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+        <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-400">
             <tr>
               <th className="px-4 py-3 font-medium">Started</th>
