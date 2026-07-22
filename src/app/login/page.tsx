@@ -61,7 +61,19 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+    <div className="flex min-h-screen">
+      {/* Hero image panel (large screens only). */}
+      <div className="relative hidden w-1/2 bg-brand-900 lg:block">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="https://golvuayo9mmzga7x.public.blob.vercel-storage.com/ChatGPT%20Image%20Jul%2022%2C%202026%2C%2004_26_30%20PM.png"
+          alt="Prime Global Logistics"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      </div>
+
+      {/* Sign-in panel. */}
+      <div className="flex w-full items-center justify-center bg-slate-100 px-4 lg:w-1/2">
       <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
         <div className="mb-6">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -106,6 +118,7 @@ function LoginForm() {
         <p className="mt-4 text-xs text-slate-400">
           Create a user in the Supabase dashboard (Authentication → Users) to sign in.
         </p>
+      </div>
       </div>
     </div>
   );
