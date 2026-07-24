@@ -129,7 +129,7 @@ export function buildAssistantPayload(appBaseUrl: string, serverSecret?: string)
     transcriber: { provider: 'deepgram', model: 'nova-2', language: 'multi' },
     model: {
       provider: 'anthropic',
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       messages: [{ role: 'system', content: SYSTEM_PROMPT }],
       tools: buildTools(appBaseUrl),
     },
