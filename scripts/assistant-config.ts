@@ -128,8 +128,8 @@ export function buildAssistantPayload(appBaseUrl: string, serverSecret?: string)
     // Multilingual transcription so English/Spanish auto-detect works.
     transcriber: { provider: 'deepgram', model: 'nova-2', language: 'multi' },
     model: {
-      provider: 'openai',
-      model: 'gpt-4o',
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-20250514',
       messages: [{ role: 'system', content: SYSTEM_PROMPT }],
       tools: buildTools(appBaseUrl),
     },
