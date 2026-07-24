@@ -31,10 +31,11 @@ SPEAKING NUMBERS (VERY IMPORTANT)
 - Slow down and put a brief pause between digit groups so the caller can write it down.
 - After giving any number, offer to repeat it, and repeat digit-by-digit if asked.
 - When the CALLER gives you a number, read it back one digit at a time to confirm before you act on it.
-- Money is the exception: read amounts naturally, e.g. $1,966.13 as "one thousand nine hundred sixty-six dollars and thirteen cents". Dates and times are also read naturally.
+- Money is the exception: read amounts naturally, and ALWAYS in the caller's CURRENT language. In English: $1,966.13 -> "one thousand nine hundred sixty-six dollars and thirteen cents". En español: $1,966.13 -> "mil novecientos sesenta y seis dólares con trece centavos". Dates and times are likewise read naturally in the caller's current language.
 - Pronouncing "AWB": in Spanish, always say the letters with their Spanish names — write it as "a, doble u, be" (e.g. "el número de AWB" -> "el número de a, doble u, be"). Never read AWB as a Spanish word or as "ah-oo-beh". In English, say it as the letters "A. W. B." Prefer saying "air waybill" / "guía aérea" in full when it reads more naturally.
 
 HOW TO HANDLE AWB NUMBERS
+- When you ASK for the number, ask plainly — "Sure — what's the air waybill number?" (English) / "Con gusto, ¿cuál es el número de guía aérea?" (Spanish). Never speak a format, a template, dashes, the "810" prefix, or any placeholder letters (like X) out loud. Just ask for the number and accept whatever the caller says.
 - Callers may call this number an "air waybill" / "AWB", a "BOL" / "bill of lading", or a "Prime Air Corp housebill" / "housebill". These all refer to the SAME shipment number — treat them identically and look it up the same way.
 - A master air waybill is always 11 digits: 810 followed by eight more digits (e.g. 810-21961413).
 - Accept the number HOWEVER the caller says it — all together in one breath (e.g. "eight one zero two one nine six one three zero six" or "eighty one zero two one nine six one three zero six"), in groups, or digit by digit. Do NOT ask them to slow down, add a dash, or repeat it in groups; just capture all 11 digits.
@@ -80,13 +81,14 @@ export function buildTools(appBaseUrl: string) {
       function: {
         name: 'lookup_awb',
         description:
-          'Look up the live status, flight, route, availability, and charges for a master air waybill (AWB).',
+          'Look up the live status, flight, origin and destination, availability, and charges for a master air waybill (AWB).',
         parameters: {
           type: 'object',
           properties: {
             masterBillNumber: {
               type: 'string',
-              description: 'Master air waybill number, format 810-XXXXXXXX.',
+              description:
+                'The master air waybill number the caller gives you: about eleven digits beginning with eight one zero, captured exactly as heard. Dashes optional; the tool normalizes it. Never read this text aloud to the caller.',
             },
           },
           required: ['masterBillNumber'],
@@ -102,7 +104,11 @@ export function buildTools(appBaseUrl: string) {
         parameters: {
           type: 'object',
           properties: {
-            masterBillNumber: { type: 'string', description: 'AWB number, 810-XXXXXXXX.' },
+            masterBillNumber: {
+              type: 'string',
+              description:
+                'The air waybill number the caller gives you: about eleven digits beginning with eight one zero, captured exactly as heard. Dashes optional; the tool normalizes it. Never read this text aloud to the caller.',
+            },
             windowStart: {
               type: 'string',
               description: 'Pickup window start as an ISO 8601 timestamp.',
