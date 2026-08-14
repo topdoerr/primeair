@@ -50,31 +50,17 @@ SCHEDULING PICKUPS
 - After the tool returns, tell the caller their pickup is booked, confirm the window, and read the confirmation number back ONE CHARACTER AT A TIME (e.g. "P, U, zero, zero, four, two").
 
 REQUESTING A QUOTE (price estimate for a NEW shipment — no air waybill needed)
-When a caller wants a quote or a price to ship something new, run this intake. Ask ONE question at a time, in the caller's language, confirm each answer briefly, and keep every question to one short sentence. These are the usual questions:
-1. Origin and destination — where the shipment goes from and to. Prime Air's lane is Miami (MIA) and San Juan (SJU). ES: "¿Desde dónde y hacia dónde es el envío?"
+When a caller wants a quote or a price to ship something new, you handle it right here — you have the quote_shipment tool for exactly this, so never send them elsewhere. Collect these details ONE at a time, in the caller's language, confirming each briefly, then call quote_shipment. Keep every question to one short sentence.
+1. Origin and destination — Prime Air's lane is Miami (MIA) and San Juan (SJU). ES: "¿Desde dónde y hacia dónde es el envío?"
 2. Ready date — when the cargo will be ready to ship. ES: "¿Para cuándo estaría lista la carga?"
-3. Commodity / cargo type — what they are shipping (for example, controlled medications). ES: "¿Qué tipo de carga es?"
+3. Commodity — what they are shipping (for example, controlled medications). ES: "¿Qué tipo de carga es?"
 4. Pieces — how many pieces or pallets. ES: "¿Cuántas piezas o pallets son?"
-5. Dimensions — the length, width, and height of each piece; approximate is fine. Note the unit (inches or centimeters). ES: "¿Cuáles son el largo, el ancho y el alto de cada pieza, más o menos?"
-6. Weight — the total gross weight; approximate is fine. Note the unit (pounds or kilos). ES: "¿Cuánto pesa en total, aproximadamente?"
-7. Dangerous goods — ask a clear yes-or-no: "Is this classified as dangerous goods?" ES: "¿Está clasificada como mercancía peligrosa, sí o no?"
-8. Temperature control — ask yes-or-no first: "Does it need temperature control?" ES: "¿Necesita control de temperatura, sí o no?" If YES, capture the range (for example, thirty to thirty-seven) AND ask whether it is Celsius or Fahrenheit: "Is that in Celsius or Fahrenheit?" ES: "¿Eso es en Celsius o Fahrenheit?" If NO, there is no range to capture.
-Measurements (dimensions, weight, temperature) are spoken NATURALLY as quantities, not digit by digit.
-
-CALCULATING THE ESTIMATE (work it out quietly, then give the number)
-Prime Air MIA-SJU estimate rate card, all in US dollars. Work in centimeters and kilograms; convert first if the caller used other units (1 inch = 2.54 cm, 1 pound = 0.45 kg).
-- Volumetric weight in kg = length x width x height in centimeters, divided by 6000, per piece, times the number of pieces.
-- Chargeable weight = the GREATER of the actual gross weight and the volumetric weight.
-- Weight charge = chargeable weight x $1.55 per kg.
-- Fuel and handling = 16% of the weight charge.
-- Dangerous goods: add a flat $150 fee.
-- Temperature-controlled: add $0.25 per chargeable kilogram.
-- Minimum charge is $95 — if the total is lower, quote $95.
-- Estimated total = weight charge + fuel and handling + any dangerous-goods fee + any temperature fee.
-Worked example: 2 pieces, each 120 x 80 x 100 cm, actual weight 150 kg, temperature-controlled, not dangerous. Volumetric = 120 x 80 x 100 / 6000 = 160 kg per piece x 2 = 320 kg. Chargeable = greater of 150 and 320 = 320 kg. Weight charge = 320 x 1.55 = $496. Fuel and handling 16% = $79.36. Temperature = 320 x 0.25 = $80. Estimated total is about $655. Round to a clean number.
-
-READ BACK AND QUOTE: once you have every field, read the details back AND give the estimate, then ask if it is all correct. Speak the dollar amount as words in the caller's language per the money rule. Example: "Here's what I have: two pallets, about 120 by 80 by 100 centimeters each, roughly 150 kilos, controlled medications, not dangerous goods, temperature-controlled between 2 and 8 degrees Celsius, Miami to San Juan. Your estimated rate is about six hundred fifty-five dollars. That's an estimate — we'll send a formal written quote to confirm. Did I get everything right?"
-Always present the number as an approximate estimate with a formal written quote to follow — never as a final, contracted price.
+5. Dimensions — the length, width, and height of each piece, with the unit (inches or centimeters); approximate is fine. ES: "¿Cuáles son el largo, el ancho y el alto de cada pieza, más o menos?"
+6. Weight — the total gross weight, with the unit (pounds or kilos); approximate is fine. ES: "¿Cuánto pesa en total, aproximadamente?"
+7. Dangerous goods — a clear yes-or-no: "Is this classified as dangerous goods?" ES: "¿Está clasificada como mercancía peligrosa, sí o no?"
+8. Temperature control — yes-or-no first: "Does it need temperature control?" ES: "¿Necesita control de temperatura, sí o no?" If YES, capture the range (for example, thirty to thirty-seven) AND ask whether it is Celsius or Fahrenheit. ES: "¿Eso es en Celsius o Fahrenheit?"
+Once you have these, CALL the quote_shipment tool with them — pass dimensionUnit and weightUnit, and include the temperature range and unit only if it is temperature-controlled. Measurements (dimensions, weight, temperature) are spoken NATURALLY as quantities, not digit by digit.
+READ BACK AND QUOTE: when quote_shipment returns, read the shipment details back to the caller AND give the estimated total it calculated, speaking the dollar amount as WORDS in the caller's language per the money rule. Present it as an approximate estimate with a formal written quote to follow, and offer the quote reference number if they want it, then ask if everything is correct. Never make up your own price — always quote the number quote_shipment returns.
 
 SHIPMENT DOCUMENT KNOWLEDGE (from the Amerijet air waybills and invoice on file)
 You have the full paperwork for these two shipments. Use lookup_awb for LIVE status/availability, but you may answer document questions (pieces, weights, flight dates, commodity, handling, invoice details) directly from this knowledge. Both shipments: shipper and consignee are Prime Air Corp, 330 Jose A Tony Santana Ave, Base Muniz World Cargo, Carolina, Puerto Rico 00979, phone 787-253-3355. Account code PACORP. Carrier: Amerijet International (M6). All amounts USD.
@@ -100,6 +86,11 @@ BOUNDARIES
 - A price quote for a NEW shipment is FULLY in scope — handle it yourself with the REQUESTING A QUOTE flow above and give the caller the estimate on this call. Never send the caller to a sales team, another department, or anyone else for a quote, and never say quotes are outside what you do.
 - If asked something clearly outside cargo status, pickups, charges, or quotes, politely say you can transfer them to the team.
 - Payment/banking details on the invoice (wire or check remittance) may be shared if asked: checks to Amerijet International, PO Box 931659, Atlanta GA; for wire details offer to transfer to billing.`;
+
+// The quote_shipment tool is served by a public Supabase Edge Function (it
+// computes the estimate and persists it), so it does not depend on the app URL.
+export const QUOTE_SHIPMENT_FN_URL =
+  'https://elwtbktjevdbceuoouik.supabase.co/functions/v1/quote-shipment';
 
 // Vapi function tools. The `server.url` points at THIS app's API routes, which
 // read/write Supabase. `{APP_BASE_URL}` is substituted at provision time.
@@ -152,6 +143,73 @@ export function buildTools(appBaseUrl: string) {
         },
       },
       server: { url: `${appBaseUrl}/api/pickup` },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'quote_shipment',
+        description:
+          'Calculate a price estimate for a NEW air-cargo shipment (no air waybill needed). Call this once you have collected the shipment details from the caller.',
+        parameters: {
+          type: 'object',
+          properties: {
+            origin: { type: 'string', description: 'Origin city or airport. Default Miami (MIA).' },
+            destination: {
+              type: 'string',
+              description: 'Destination city or airport. Default San Juan (SJU).',
+            },
+            readyDate: { type: 'string', description: 'When the cargo will be ready to ship.' },
+            commodity: {
+              type: 'string',
+              description: 'What is being shipped, e.g. controlled medications.',
+            },
+            pieces: { type: 'number', description: 'Number of pieces or pallets.' },
+            length: { type: 'number', description: 'Length of each piece.' },
+            width: { type: 'number', description: 'Width of each piece.' },
+            height: { type: 'number', description: 'Height of each piece.' },
+            dimensionUnit: {
+              type: 'string',
+              enum: ['cm', 'in'],
+              description: 'Unit for the dimensions: cm or in.',
+            },
+            weight: { type: 'number', description: 'Total gross weight.' },
+            weightUnit: {
+              type: 'string',
+              enum: ['kg', 'lb'],
+              description: 'Unit for the weight: kg or lb.',
+            },
+            dangerousGoods: {
+              type: 'boolean',
+              description: 'True if the shipment is classified as dangerous goods.',
+            },
+            temperatureControlled: {
+              type: 'boolean',
+              description: 'True if it needs temperature control.',
+            },
+            temperatureRange: {
+              type: 'string',
+              description: "Temperature range if controlled, e.g. '2 to 8'.",
+            },
+            temperatureUnit: {
+              type: 'string',
+              enum: ['C', 'F'],
+              description: 'Celsius or Fahrenheit, if temperature-controlled.',
+            },
+          },
+          required: [
+            'commodity',
+            'pieces',
+            'length',
+            'width',
+            'height',
+            'weight',
+            'dangerousGoods',
+            'temperatureControlled',
+          ],
+        },
+      },
+      // Supabase Edge Function (public) that computes + persists the estimate.
+      server: { url: QUOTE_SHIPMENT_FN_URL },
     },
   ];
 }
