@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { PageHeader } from '@/components/ui';
-import { CallsTable } from '@/components/CallsTable';
+import { CallsView } from '@/components/views/CallsView';
 import type { CallRecord } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -13,13 +12,7 @@ export default async function CallsPage() {
     .order('started_at', { ascending: false })
     .limit(200);
 
-  return (
-    <div>
-      <PageHeader
-        title="Calls"
-        subtitle="Recent inbound calls handled by the Prime Air voice agent"
-      />
-      <CallsTable calls={(data ?? []) as CallRecord[]} />
-    </div>
-  );
+  const calls = (data ?? []) as CallRecord[];
+
+  return <CallsView calls={calls} />;
 }

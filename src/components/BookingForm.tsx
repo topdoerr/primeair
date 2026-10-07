@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button, Divider, Field, InlineNotice, Input, Num, Route, Select } from '@/components/ui';
 import type { Customer } from '@/lib/types';
-
-const inputCls =
-  'w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500';
 
 function tomorrow(): string {
   const d = new Date();
@@ -13,10 +11,15 @@ function tomorrow(): string {
   return d.toISOString().slice(0, 10);
 }
 
+type Result =
+  | { ok: true; bookingNumber: string; cargowiseRef: string | null }
+  | { ok: false; text: string };
+
 // New booking for a recurring client. Posts to /api/bookings, which creates
 // the booking and pushes it to CargoWise through the e-adapter.
 export function BookingForm({ customers }: { customers: Customer[] }) {
   const router = useRouter();
+  const uid = useId();
   const first = customers[0];
   const [customerId, setCustomerId] = useState(first?.id ?? '');
   const [commodity, setCommodity] = useState(first?.default_commodity ?? '');
@@ -25,7 +28,9 @@ export function BookingForm({ customers }: { customers: Customer[] }) {
   const [requestedDate, setRequestedDate] = useState(tomorrow());
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [msg, setMsg] = useState<Result | null>(null);
+
+  const selected = customers.find((x) => x.id === customerId) ?? first;
 
   function pickCustomer(id: string) {
     setCustomerId(id);
@@ -47,12 +52,7 @@ export function BookingForm({ customers }: { customers: Customer[] }) {
       if (!res.ok) {
         setMsg({ ok: false, text: data.error ?? 'Could not create the booking' });
       } else {
-        setMsg({
-          ok: true,
-          text: `${data.bookingNumber} created${
-            data.cargowiseRef ? ` · CargoWise ref ${data.cargowiseRef}` : ''
-          }`,
-        });
+        setMsg({ ok: true, bookingNumber: data.bookingNumber, cargowiseRef: data.cargowiseRef ?? null });
         setPieces('');
         setWeightKg('');
         setNotes('');
@@ -65,105 +65,123 @@ export function BookingForm({ customers }: { customers: Customer[] }) {
     }
   }
 
+  const ids = {
+    client: `${uid}-client`,
+    commodity: `${uid}-commodity`,
+    pieces: `${uid}-pieces`,
+    weight: `${uid}-weight`,
+    date: `${uid}-date`,
+    notes: `${uid}-notes`,
+  };
+
   return (
     <form onSubmit={submit} className="space-y-4">
-      <div>
-        <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Client
-        </label>
-        <select
-          value={customerId}
-          onChange={(e) => pickCustomer(e.target.value)}
-          className={inputCls}
-          required
-        >
+      {/* Client */}
+      <Field label="Client" htmlFor={ids.client}>
+        <Select id={ids.client} size="lg" value={customerId} onChange={(e) => pickCustomer(e.target.value)} required>
           {customers.map((c) => (
             <option key={c.id} value={c.id}>
-              {c.name} · {c.account_code}
+              {c.name} ({c.account_code})
             </option>
           ))}
-        </select>
-      </div>
-      <div>
-        <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Commodity
-        </label>
-        <input
+        </Select>
+      </Field>
+
+      <Divider />
+
+      {/* Shipment */}
+      <Field label="Commodity" htmlFor={ids.commodity}>
+        <Input
+          id={ids.commodity}
+          size="lg"
           value={commodity}
           onChange={(e) => setCommodity(e.target.value)}
-          placeholder="Fresh cut flowers"
-          className={inputCls}
+          placeholder="e.g. Fresh cut flowers"
+          autoComplete="off"
         />
-      </div>
+      </Field>
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Pieces
-          </label>
-          <input
+        <Field label="Pieces" htmlFor={ids.pieces}>
+          <Input
+            id={ids.pieces}
+            size="lg"
+            mono
             type="number"
             min={1}
+            inputMode="numeric"
             value={pieces}
             onChange={(e) => setPieces(e.target.value)}
-            placeholder="4"
-            className={inputCls}
+            placeholder="e.g. 4"
           />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Weight (kg)
-          </label>
-          <input
+        </Field>
+        <Field label="Weight" htmlFor={ids.weight}>
+          <Input
+            id={ids.weight}
+            size="lg"
+            mono
             type="number"
             min={0}
             step="0.1"
+            inputMode="decimal"
             value={weightKg}
             onChange={(e) => setWeightKg(e.target.value)}
-            placeholder="1800"
-            className={inputCls}
+            placeholder="e.g. 1800"
+            suffix="kg"
           />
-        </div>
+        </Field>
       </div>
-      <div>
-        <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Ready date
-        </label>
-        <input
+
+      <Divider />
+
+      {/* Schedule */}
+      <Field label="Ready date" htmlFor={ids.date}>
+        <Input
+          id={ids.date}
+          size="lg"
+          mono
           type="date"
           value={requestedDate}
           onChange={(e) => setRequestedDate(e.target.value)}
-          className={inputCls}
           required
         />
-      </div>
-      <div>
-        <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Notes
-        </label>
-        <input
+      </Field>
+      <Field label="Notes" htmlFor={ids.notes} optional>
+        <Input
+          id={ids.notes}
+          size="lg"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Keep in cooler · 2–8 °C"
-          className={inputCls}
+          placeholder="e.g. Keep in cooler, 2 to 8 C"
+          autoComplete="off"
         />
+      </Field>
+
+      <div className="flex items-center justify-between gap-3 pt-1">
+        <span className="inline-flex items-center gap-1.5 text-xs text-ink-3">
+          Lane
+          <Route from={selected?.default_origin ?? 'MIA'} to={selected?.default_destination ?? 'SJU'} />
+        </span>
+        <Button type="submit" variant="primary" size="lg" busy={busy} disabled={customers.length === 0}>
+          {busy ? 'Creating' : 'Create booking'}
+        </Button>
       </div>
-      <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={busy || customers.length === 0}
-          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
-        >
-          {busy ? 'Creating…' : 'Create booking'}
-        </button>
-        {msg && (
-          <span className={`text-xs ${msg.ok ? 'text-accent-700' : 'text-red-600'}`}>
-            {msg.text}
-          </span>
-        )}
-      </div>
-      <p className="text-xs text-slate-400">
-        Confirms the booking and creates it in CargoWise through the e-adapter.
-      </p>
+
+      {msg && (
+        <InlineNotice tone={msg.ok ? 'ok' : 'danger'} className="mt-3 w-full">
+          {msg.ok ? (
+            <>
+              <Num className="font-medium">{msg.bookingNumber}</Num> created
+              {msg.cargowiseRef && (
+                <>
+                  , CargoWise ref <Num className="font-medium">{msg.cargowiseRef}</Num>
+                </>
+              )}
+            </>
+          ) : (
+            msg.text
+          )}
+        </InlineNotice>
+      )}
     </form>
   );
 }

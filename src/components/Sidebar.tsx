@@ -2,102 +2,110 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { ComponentType, SVGProps } from 'react';
-import {
-  OverviewIcon,
-  PhoneIcon,
-  PackageIcon,
-  ReceiptIcon,
-  BotIcon,
-  TicketIcon,
-  TrackingIcon,
-  BookingIcon,
-} from '@/components/icons';
+import { NAV_GROUPS, isActive } from '@/components/nav';
+import { BrandLockup, PoweredByOnda, RouteStrip } from '@/components/Brand';
+import { LogOutIcon } from '@/components/icons';
 
-type IconType = ComponentType<SVGProps<SVGSVGElement>>;
+/*
+  Nav item recipes (design-system 5.2), written out as literal strings so Tailwind's
+  scanner sees every class. The 8% tints use arbitrary alpha (`/[0.08]`): Tailwind 3.4's
+  opacity scale steps 0, 5, 10, 15, ... so a bare `/8` modifier emits no CSS at all and the
+  active tint silently disappeared. `/5` is a real step and stays as written.
+*/
+const NAV_ITEM_BASE =
+  'group relative flex h-8 items-center gap-2.5 rounded-md px-2 text-sm transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:justify-center md:px-0 lg:justify-start lg:px-2';
 
-// Logistics first (milestone tracking, bookings, AWBs), voice agent after.
-const NAV: { href: string; label: string; Icon: IconType }[] = [
-  { href: '/', label: 'Overview', Icon: OverviewIcon },
-  { href: '/tracking', label: 'Milestone Tracking', Icon: TrackingIcon },
-  { href: '/bookings', label: 'Bookings', Icon: BookingIcon },
-  { href: '/awb', label: 'AWB Lookup', Icon: PackageIcon },
-  { href: '/discrepancies', label: 'Discrepancy Reports', Icon: ReceiptIcon },
-  { href: '/tickets', label: 'Tickets', Icon: TicketIcon },
-  { href: '/calls', label: 'Calls', Icon: PhoneIcon },
-  { href: '/assistant', label: 'Assistant', Icon: BotIcon },
-];
+// Active: 8% white tint, full-white 500 label, and the 2px white rule on the rail's left
+// edge (the item sits 12px inside the aside's px-3, so left-[-12px] lands on x=0).
+const NAV_ITEM_ACTIVE = `${NAV_ITEM_BASE} bg-sidebar-active/[0.08] font-medium text-sidebar-fg before:absolute before:left-[-12px] before:top-1.5 before:h-5 before:w-0.5 before:rounded-full before:bg-sidebar-fg`;
 
-export function Sidebar({ userEmail }: { userEmail?: string | null }) {
-  const pathname = usePathname();
+const NAV_ITEM_IDLE = `${NAV_ITEM_BASE} text-sidebar-fg/60 hover:bg-sidebar-hover/5 hover:text-sidebar-fg/90`;
+
+// Graphite rail beside the operating panel. Rail mode (icons only) at md; full at lg.
+export function Sidebar({
+  userEmail,
+  pathname: pathnameOverride,
+}: {
+  userEmail?: string | null;
+  /** Route to mark active; defaults to the live pathname (dev preview passes the mirrored route). */
+  pathname?: string;
+}) {
+  const livePathname = usePathname();
+  const pathname = pathnameOverride ?? livePathname;
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col bg-sidebar">
-      <div className="px-5 pb-5 pt-6">
-        <div className="rounded-lg bg-white/95 px-3 py-2.5">
-          {/* Hotlinked from the company site; swap for /logo.png to self-host. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="https://primeaircorp.com/wp-content/uploads/2025/03/Prime-Global-Logistics-Logo-e1753980018767.png"
-            alt="Prime Air Corp"
-            className="h-8 w-auto"
-          />
-        </div>
-        <div className="mt-3 flex items-center gap-2 px-1">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium tracking-wide text-sidebar-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent-400" aria-hidden />
-            MIA → SJU air cargo
-          </span>
-        </div>
-      </div>
+    <aside className="flex w-[232px] shrink-0 flex-col bg-sidebar-bg px-3 pb-3 pt-3 md:w-14 lg:w-[232px]">
+      <BrandLockup size="sm" inverse className="md:justify-center md:px-0 lg:justify-start lg:px-2" textClassName="md:hidden lg:block" />
 
-      <nav className="flex-1 space-y-0.5 px-3" aria-label="Main navigation">
-        {NAV.map(({ href, label, Icon }) => {
-          const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                active
-                  ? 'bg-brand-500 font-medium text-white shadow-sm'
-                  : 'text-sidebar-foreground/80 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              <Icon
-                className={`h-[18px] w-[18px] shrink-0 ${
-                  active ? 'text-white' : 'text-sidebar-foreground/60 group-hover:text-white'
-                }`}
-              />
-              {label}
-            </Link>
-          );
-        })}
+      <RouteStrip inverse className="mx-2 mt-3 md:hidden lg:flex" />
+
+      <nav aria-label="Main navigation" className="mt-5 flex-1 space-y-5">
+        {NAV_GROUPS.map((group) => (
+          <div key={group.label}>
+            <div className="mb-1 px-2 text-2xs font-medium text-sidebar-fg/40 md:hidden lg:block">{group.label}</div>
+            <ul className="space-y-0.5">
+              {group.items.map(({ href, label, Icon }) => {
+                const active = isActive(href, pathname);
+                return (
+                  <li key={href}>
+                    <Link
+                      href={href}
+                      title={label}
+                      aria-current={active ? 'page' : undefined}
+                      className={active ? NAV_ITEM_ACTIVE : NAV_ITEM_IDLE}
+                    >
+                      <Icon
+                        strokeWidth={active ? 1.75 : 1.5}
+                        className={`h-4 w-4 shrink-0 ${
+                          active ? 'text-sidebar-fg' : 'text-sidebar-fg/40 group-hover:text-sidebar-fg/80'
+                        }`}
+                      />
+                      <span className="truncate md:hidden lg:inline">{label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
       </nav>
 
-      <div className="mx-3 mb-4 mt-4 rounded-xl bg-white/5 p-4 ring-1 ring-white/10">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500 text-sm font-semibold text-white">
+      <div className="mt-auto space-y-2">
+        <div className="flex items-center gap-2.5 rounded-md px-2 py-1.5 md:justify-center md:px-0 lg:justify-start lg:px-2">
+          <div
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sidebar-fg text-2xs font-semibold text-sidebar-bg"
+            aria-hidden
+          >
             {(userEmail?.[0] ?? '?').toUpperCase()}
           </div>
-          <div className="min-w-0">
-            <div className="truncate text-xs font-medium text-white" title={userEmail ?? ''}>
+          <div className="min-w-0 flex-1 md:hidden lg:block">
+            <div className="truncate text-xs font-medium text-sidebar-fg" title={userEmail ?? ''}>
               {userEmail ?? 'Not signed in'}
             </div>
-            <div className="text-[11px] text-sidebar-foreground/60">Operations</div>
+            <div className="truncate text-2xs text-sidebar-fg/45">Operations</div>
           </div>
+          <form action="/api/auth/signout" method="post" className="ml-auto shrink-0 md:hidden lg:block">
+            <button
+              type="submit"
+              className="h-7 shrink-0 whitespace-nowrap rounded-md px-2 text-xs text-sidebar-fg/60 transition-colors duration-100 hover:bg-sidebar-hover/5 hover:text-sidebar-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Sign out
+            </button>
+          </form>
         </div>
-        <div className="mt-3 text-[11px] text-sidebar-foreground/50">
-          Powered by <span className="font-medium text-sidebar-foreground/80">Onda</span> · logistics AI
-        </div>
-        <form action="/api/auth/signout" method="post" className="mt-3">
+        <form action="/api/auth/signout" method="post" className="hidden justify-center md:flex lg:hidden">
           <button
             type="submit"
-            className="w-full rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-sidebar-foreground transition-colors hover:bg-white/20 hover:text-white"
+            aria-label="Sign out"
+            title="Sign out"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-sidebar-fg/60 transition-colors duration-100 hover:bg-sidebar-hover/5 hover:text-sidebar-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            Sign out
+            <LogOutIcon />
           </button>
         </form>
+        <div className="flex items-center border-t border-sidebar-line/[0.08] px-2 pt-2.5 md:justify-center lg:justify-start">
+          <PoweredByOnda inverse compact />
+        </div>
       </div>
     </aside>
   );

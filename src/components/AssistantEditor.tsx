@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
+import { Button, Card, CardBody, CardFooter, CardHeader, Field, InlineNotice, Textarea } from '@/components/ui';
 
+// "Prompts" card: edits the first message and system prompt and PATCHes them back to Vapi.
 export function AssistantEditor({
   assistantId,
   initialFirstMessage,
@@ -15,6 +17,8 @@ export function AssistantEditor({
   const [systemPrompt, setSystemPrompt] = useState(initialSystemPrompt);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const firstMessageId = useId();
+  const systemPromptId = useId();
 
   const dirty =
     firstMessage !== initialFirstMessage || systemPrompt !== initialSystemPrompt;
@@ -42,44 +46,54 @@ export function AssistantEditor({
   }
 
   return (
-    <div className="space-y-5">
-      <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">First message</label>
-        <textarea
-          value={firstMessage}
-          onChange={(e) => setFirstMessage(e.target.value)}
-          rows={3}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-        />
-        <p className="mt-1 text-xs text-slate-400">
-          Spoken when the assistant answers a call.
-        </p>
-      </div>
+    <Card>
+      <CardHeader
+        title="Prompts"
+        actions={
+          dirty ? (
+            <span className="inline-flex items-center gap-1.5 text-xs text-ink-3">
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warn-dot" />
+              Unsaved changes
+            </span>
+          ) : undefined
+        }
+      />
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">System prompt</label>
-        <textarea
-          value={systemPrompt}
-          onChange={(e) => setSystemPrompt(e.target.value)}
-          rows={12}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-        />
-      </div>
+      <CardBody className="space-y-4">
+        <Field label="First message" htmlFor={firstMessageId} help="Spoken when the assistant answers a call.">
+          <Textarea
+            id={firstMessageId}
+            value={firstMessage}
+            onChange={(e) => setFirstMessage(e.target.value)}
+            rows={3}
+            placeholder="e.g. Thank you for calling Prime Air, how can I help?"
+          />
+        </Field>
 
-      <div className="flex items-center gap-3">
-        <button
-          onClick={save}
-          disabled={saving || !dirty}
-          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
-        >
-          {saving ? 'Pushing…' : 'Push changes to topdoer'}
-        </button>
-        {msg && (
-          <span className={`text-sm ${msg.ok ? 'text-emerald-600' : 'text-red-600'}`}>
-            {msg.text}
-          </span>
-        )}
-      </div>
-    </div>
+        <Field label="System prompt" htmlFor={systemPromptId}>
+          <Textarea
+            id={systemPromptId}
+            mono
+            value={systemPrompt}
+            onChange={(e) => setSystemPrompt(e.target.value)}
+            rows={14}
+            spellCheck={false}
+          />
+        </Field>
+      </CardBody>
+
+      <CardFooter className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          {msg ? (
+            <InlineNotice tone={msg.ok ? 'ok' : 'danger'}>{msg.text}</InlineNotice>
+          ) : (
+            <span>Edits are sent to Vapi through the MCP server.</span>
+          )}
+        </div>
+        <Button variant="primary" size="md" onClick={save} loading={saving} disabled={!dirty} className="shrink-0">
+          {saving ? 'Pushing' : 'Push changes'}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }

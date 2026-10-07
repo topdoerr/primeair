@@ -15,7 +15,9 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/login') ||
     pathname.startsWith('/api') || // API routes authenticate themselves
     pathname.startsWith('/_next') ||
-    pathname === '/favicon.ico';
+    pathname === '/favicon.ico' ||
+    // Dev-only design preview (fixture data, no database) — never in production.
+    (pathname.startsWith('/design-preview') && process.env.NODE_ENV !== 'production');
 
   let response = NextResponse.next({ request });
 

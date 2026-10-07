@@ -2,29 +2,171 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+  Precision Ops Console tokens (docs/design-system.md, section 3).
+  Every color is an RGB triplet so Tailwind exposes it as
+  rgb(var(--x) / <alpha-value>) and opacity modifiers keep working.
+*/
 :root {
-  /* Semantic design tokens — Prime Air cerulean + slate neutrals + green accent. */
-  --background: 245 247 250; /* soft cool gray */
-  --foreground: 15 23 42; /* slate-900 */
-  --card: 255 255 255;
-  --card-foreground: 15 23 42;
-  --muted: 241 245 249;
-  --muted-foreground: 100 116 139;
-  --border: 226 232 240;
-  --primary: 27 143 206; /* brand-500 cerulean */
-  --primary-foreground: 255 255 255;
-  --accent-token: 92 185 72; /* brand green */
-  --sidebar: 16 42 61; /* deep navy-teal derived from brand-900 */
-  --sidebar-foreground: 203 225 240;
-  --radius: 0.75rem;
+  /* Canvas and surfaces */
+  --canvas: 244 245 247; /* #f4f5f7 page background behind the panel */
+  --surface: 255 255 255; /* #ffffff panel, cards, table bodies, inputs, drawer */
+  --surface-sunken: 248 249 251; /* #f8f9fb table head, inset blocks, code, KPI footer */
+  --surface-hover: 242 244 247; /* #f2f4f7 row hover, ghost hover */
+  --surface-active: 233 236 241; /* #e9ecf1 pressed ghost, selected */
+  --overlay: 12 17 23; /* used as rgb(var(--overlay) / 0.3) drawer scrim */
+
+  /* Lines (always 1px) */
+  --line-subtle: 238 240 243; /* #eef0f3 row dividers, list dividers, timeline rail */
+  --line: 227 230 235; /* #e3e6eb card and panel borders, table head bottom */
+  --line-strong: 207 212 220; /* #cfd4dc input borders, badge outline, empty meter cells */
+
+  /* Text ramp (cool neutrals) */
+  --ink: 12 17 23; /* #0c1117 headings, primary data, KPI values   16.9:1 */
+  --ink-2: 59 68 81; /* #3b4451 body, cells, labels                   9.6:1 */
+  --ink-3: 102 112 133; /* #667085 meta, table heads, hints            4.7:1 AA */
+  --ink-4: 152 162 179; /* #98a2b3 placeholders, disabled, decorative   never data */
+  --ink-inverse: 255 255 255;
+
+  /* Status tones: dot / fg / bg */
+  --ok-dot: 92 185 72;
+  --ok-fg: 47 107 39;
+  --ok-bg: 238 248 234;
+  --warn-dot: 217 154 30;
+  --warn-fg: 138 90 0;
+  --warn-bg: 253 246 231;
+  --danger-dot: 224 73 59;
+  --danger-fg: 180 35 24;
+  --danger-bg: 253 242 241;
+  --info-dot: 27 143 206;
+  --info-fg: 23 99 143;
+  --info-bg: 237 247 252;
+  --neutral-dot: 154 163 178;
+  --neutral-fg: 82 91 107;
+  --neutral-bg: 241 243 246;
+
+  /* Focus ring */
+  --ring: 27 143 206; /* brand-500 */
+
+  /* Sidebar (graphite is the shipped default) */
+  --sidebar-bg: 15 20 26; /* #0f141a */
+  --sidebar-fg: 255 255 255; /* used at /55 for items, /80 hover, /100 active */
+  --sidebar-line: 255 255 255; /* used at /8 for hairlines inside the rail */
+  --sidebar-active: 255 255 255; /* used at /8 for the active tint */
+  --sidebar-hover: 255 255 255; /* used at /5 */
+
+  accent-color: rgb(var(--ring)); /* native audio, date picker, checkboxes pick up cerulean */
 }
 
-body {
-  background-color: rgb(var(--background));
-  color: rgb(var(--foreground));
+/* Light sidebar variant (not shipped; token swap only) */
+:root[data-sidebar='light'] {
+  --sidebar-bg: 244 245 247;
+  --sidebar-fg: 12 17 23;
+  --sidebar-line: 227 230 235;
+  --sidebar-active: 233 236 241;
+  --sidebar-hover: 242 244 247;
 }
 
-/* Simple utility for the transcript / XML mono blocks */
+@layer base {
+  html {
+    font-feature-settings: 'cv11', 'ss01', 'calt';
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html,
+  body {
+    background-color: rgb(var(--canvas));
+    color: rgb(var(--ink-2));
+  }
+
+  h1 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Mono and tables are intrinsically tabular; sans prose keeps proportional figures. */
+  table,
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--ring));
+    outline-offset: 2px;
+    border-radius: inherit;
+  }
+
+  ::selection {
+    background: #d3ecf8;
+    color: #0c1117;
+  }
+
+  input[type='date']::-webkit-calendar-picker-indicator {
+    opacity: 0.6;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    /* Busy states must still communicate. */
+    .animate-spin {
+      animation-duration: 700ms !important;
+      animation-iteration-count: infinite !important;
+    }
+  }
+}
+
+@layer utilities {
+  .tnum,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  /* Overflow containers: drawer body, XML pre, table wrappers. */
+  .scroll-stable {
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--line-strong)) transparent;
+  }
+  .scroll-stable::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scroll-stable::-webkit-scrollbar-thumb {
+    background: rgb(var(--line-strong));
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    border-radius: 8px;
+  }
+}
+
+/* Login hero: the single permitted gradient surface. */
+.login-hero {
+  background-color: #0a0e14;
+  background-image:
+    radial-gradient(600px 400px at 20% 85%, rgba(27, 143, 206, 0.16), transparent 70%),
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: auto, 32px 32px, 32px 32px;
+  background-position: 0 0, -1px -1px, -1px -1px;
+}
+
+/* Transitional (spec section 3.1 removes this): CallsTable and DiscrepancyDetailView still
+   use `.mono-block` until their page pass lands on <MonoBlock>. Delete once no usages remain. */
 .mono-block {
-  @apply whitespace-pre-wrap break-words rounded-lg bg-slate-900 p-4 font-mono text-xs leading-relaxed text-slate-100;
+  @apply whitespace-pre-wrap break-words rounded-md border border-line-subtle bg-surface-sunken p-4 font-mono text-xs leading-[1.6] text-ink-2 shadow-inset-top;
 }

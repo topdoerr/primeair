@@ -1,4 +1,4 @@
-import { Sidebar } from '@/components/Sidebar';
+import { AppShell } from '@/components/AppShell';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function DashboardLayout({
@@ -17,12 +17,6 @@ export default async function DashboardLayout({
     user = null;
   }
 
-  return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar userEmail={user?.email} />
-      <main className="flex-1 overflow-x-hidden">
-        <div className="mx-auto max-w-6xl px-8 py-10">{children}</div>
-      </main>
-    </div>
-  );
+  // Operating panel shell (design-system 5.1) lives in AppShell, shared with the dev preview.
+  return <AppShell userEmail={user?.email}>{children}</AppShell>;
 }
