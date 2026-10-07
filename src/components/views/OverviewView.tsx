@@ -149,9 +149,9 @@ export function OverviewView({ awbs, milestones, pushesToday, bookings, calls }:
         />
       </KpiStrip>
 
-      <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="mt-5 grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {/* Milestone snapshot: identifier-first rows, one per tracked shipment. */}
-        <Card className="self-start">
+        <Card className="min-w-0 self-start">
           <CardHeader
             title="Milestone snapshot"
             count={<Num>{snapshot.length}</Num>}
@@ -174,10 +174,10 @@ export function OverviewView({ awbs, milestones, pushesToday, bookings, calls }:
                 }
               />
             ) : (
-              // Own scroll wrapper (section 6.8 Table wrapper, borderless inside the card): the table keeps a 720px floor
-              // and scrolls inside the card instead of crushing the milestone column; mono cells never wrap.
-              <div className="overflow-x-auto rounded-b-lg scroll-stable">
-                <table className="w-full border-collapse text-sm" style={{ minWidth: 720 }}>
+              // Borderless table inside the card (section 6.8): it never exceeds the card. Identifier, flight and
+              // Progress cells shrink to their content; the milestone cell takes the slack and truncates (max-w-0).
+              <div className="overflow-hidden rounded-b-lg">
+                <table className="w-full table-auto border-collapse text-sm">
                   <TBody>
                     {snapshot.map(({ awb, current, done }) => {
                       const href = `/tracking?q=${encodeURIComponent(awb.master_bill_number)}`;
@@ -193,7 +193,7 @@ export function OverviewView({ awbs, milestones, pushesToday, bookings, calls }:
                               <span>{awb.commodity ?? 'Cargo'}</span>
                             </div>
                           </TD>
-                          <TD className="w-full">
+                          <TD className="w-full max-w-0">
                             {current ? (
                               <div className="flex min-w-0 items-center gap-2">
                                 <StatusBadge status={current.status} />
@@ -203,7 +203,7 @@ export function OverviewView({ awbs, milestones, pushesToday, bookings, calls }:
                               <span className="text-ink-3">Not started</span>
                             )}
                           </TD>
-                          <TD align="right" className="w-px whitespace-nowrap">
+                          <TD align="right" className="w-[140px] whitespace-nowrap">
                             <div className="flex justify-end">
                               <Segments
                                 done={done}
@@ -222,7 +222,7 @@ export function OverviewView({ awbs, milestones, pushesToday, bookings, calls }:
           </CardBody>
         </Card>
 
-        <div className="flex flex-col gap-5">
+        <div className="flex min-w-0 flex-col gap-5">
           {/* Recent bookings: a quiet list, not tiles. */}
           <Card>
             <CardHeader

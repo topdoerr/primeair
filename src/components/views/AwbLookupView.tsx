@@ -95,7 +95,7 @@ export function AwbLookupView({ q, awb, notFound }: AwbLookupViewProps) {
 
       {awb && recon && (
         <>
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <Card>
               <CardHeader
                 title={

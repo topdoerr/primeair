@@ -26,7 +26,7 @@ import {
   Table,
   Toolbar,
 } from '@/components/ui';
-import { BotIcon, PhoneIcon, PlayIcon, SyncIcon } from '@/components/icons';
+import { BotIcon, ChevronRightIcon, PhoneIcon, PlayIcon, SyncIcon } from '@/components/icons';
 import type { CallRecord } from '@/lib/types';
 
 /* ------------------------------------------------------------------ */
@@ -154,12 +154,15 @@ export function CallsTable({ calls }: { calls: CallRecord[] }) {
             <TH>AWB</TH>
             <TH align="right">Duration</TH>
             <TH>Outcome</TH>
+            <TH align="right">
+              <span className="sr-only">Open</span>
+            </TH>
           </tr>
         </THead>
         <TBody>
           {calls.length === 0 ? (
             <tr>
-              <td colSpan={6}>
+              <td colSpan={7}>
                 <EmptyState
                   icon={<PhoneIcon />}
                   title="No calls yet"
@@ -183,8 +186,15 @@ export function CallsTable({ calls }: { calls: CallRecord[] }) {
                   selected={selected?.id === c.id}
                   aria-haspopup="dialog"
                 >
-                  <TD className="whitespace-nowrap font-mono text-xs tracking-[-0.01em] text-ink-2 tnum">
-                    {started ?? <Null />}
+                  {/* Started is the identifier cell: hairline underline + trailing chevron say the row opens the drawer. */}
+                  <TD identifier className="whitespace-nowrap">
+                    {started ? (
+                      <span className="underline decoration-line-strong underline-offset-[3px] group-hover:decoration-ink">
+                        {started}
+                      </span>
+                    ) : (
+                      <Null />
+                    )}
                   </TD>
                   <TD>{c.caller ? <Num className="text-ink">{c.caller}</Num> : <Null />}</TD>
                   <TD>
@@ -202,6 +212,9 @@ export function CallsTable({ calls }: { calls: CallRecord[] }) {
                     </span>
                   </TD>
                   <TD>{c.outcome ? <StatusBadge status={c.outcome.toUpperCase()} /> : <Null />}</TD>
+                  <TD align="right">
+                    <ChevronRightIcon className="inline-block h-4 w-4 text-ink-4 group-hover:text-ink-3" />
+                  </TD>
                 </TR>
               );
             })

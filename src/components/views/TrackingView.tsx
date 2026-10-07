@@ -334,7 +334,7 @@ function ShipmentDetail({ t, events }: { t: Tracked; events: IntegrationEvent[] 
         action={<TrackingActions masterBillNumber={awb.master_bill_number} />}
       />
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <Card>
           <CardHeader
             title="Milestones"

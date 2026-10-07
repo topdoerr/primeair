@@ -225,7 +225,7 @@ export function Card({
   /** Apply body padding directly (p-4); otherwise compose CardHeader/CardBody. */
   padded?: boolean;
 }) {
-  return <div className={cn('rounded-lg border border-line bg-surface', padded && 'p-4', className)}>{children}</div>;
+  return <div className={cn('min-w-0 rounded-lg border border-line bg-surface', padded && 'p-4', className)}>{children}</div>;
 }
 
 export function CardHeader({
