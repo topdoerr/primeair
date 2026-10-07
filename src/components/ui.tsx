@@ -71,6 +71,21 @@ const BADGE_STYLES: Record<string, string> = {
   HIGH: 'bg-red-50 text-red-700 ring-red-200',
   NORMAL: 'bg-sky-50 text-sky-700 ring-sky-200',
   LOW: 'bg-slate-100 text-slate-500 ring-slate-200',
+  // milestones
+  COMPLETED: 'bg-accent-50 text-accent-700 ring-accent-200',
+  IN_PROGRESS: 'bg-brand-50 text-brand-700 ring-brand-200',
+  PENDING: 'bg-slate-100 text-slate-500 ring-slate-200',
+  // integration events
+  ACKNOWLEDGED: 'bg-accent-50 text-accent-700 ring-accent-200',
+  SENT: 'bg-sky-50 text-sky-700 ring-sky-200',
+  FAILED: 'bg-red-50 text-red-700 ring-red-200',
+  // bookings
+  REQUESTED: 'bg-amber-50 text-amber-700 ring-amber-200',
+  CONFIRMED: 'bg-accent-50 text-accent-700 ring-accent-200',
+  CANCELLED: 'bg-slate-100 text-slate-500 ring-slate-200',
+  // booking source
+  VOICE_AGENT: 'bg-brand-50 text-brand-700 ring-brand-200',
+  DASHBOARD: 'bg-slate-100 text-slate-600 ring-slate-200',
 };
 
 export function Badge({ children }: { children: string }) {

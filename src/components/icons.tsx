@@ -79,6 +79,60 @@ export function TicketIcon(props: IconProps) {
   );
 }
 
+// Route with waypoints — milestone tracking.
+export function TrackingIcon(props: IconProps) {
+  return (
+    <svg {...base(props)} aria-hidden>
+      <circle cx="6" cy="19" r="3" />
+      <circle cx="18" cy="5" r="3" />
+      <path d="M8.5 17.5 15.5 6.5" />
+      <path d="M12 12h.01" />
+    </svg>
+  );
+}
+
+// Calendar with a check — bookings.
+export function BookingIcon(props: IconProps) {
+  return (
+    <svg {...base(props)} aria-hidden>
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+      <path d="m9 16 2 2 4-4" />
+    </svg>
+  );
+}
+
+// Two arrows — sync / pull.
+export function SyncIcon(props: IconProps) {
+  return (
+    <svg {...base(props)} aria-hidden>
+      <path d="M21 12a9 9 0 0 1-15.5 6.2L3 16" />
+      <path d="M3 21v-5h5" />
+      <path d="M3 12a9 9 0 0 1 15.5-6.2L21 8" />
+      <path d="M21 3v5h-5" />
+    </svg>
+  );
+}
+
+// Cloud with an up arrow — push to CargoWise.
+export function UploadCloudIcon(props: IconProps) {
+  return (
+    <svg {...base(props)} aria-hidden>
+      <path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2" />
+      <path d="M12 12v9" />
+      <path d="m8 16 4-4 4 4" />
+    </svg>
+  );
+}
+
+export function CheckIcon(props: IconProps) {
+  return (
+    <svg {...base(props)} aria-hidden>
+      <path d="m20 6-11 11-5-5" />
+    </svg>
+  );
+}
+
 export function PlayIcon(props: IconProps) {
   return (
     <svg {...base(props)} aria-hidden>

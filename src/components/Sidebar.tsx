@@ -10,16 +10,21 @@ import {
   ReceiptIcon,
   BotIcon,
   TicketIcon,
+  TrackingIcon,
+  BookingIcon,
 } from '@/components/icons';
 
 type IconType = ComponentType<SVGProps<SVGSVGElement>>;
 
+// Logistics first (milestone tracking, bookings, AWBs), voice agent after.
 const NAV: { href: string; label: string; Icon: IconType }[] = [
   { href: '/', label: 'Overview', Icon: OverviewIcon },
-  { href: '/calls', label: 'Calls', Icon: PhoneIcon },
+  { href: '/tracking', label: 'Milestone Tracking', Icon: TrackingIcon },
+  { href: '/bookings', label: 'Bookings', Icon: BookingIcon },
   { href: '/awb', label: 'AWB Lookup', Icon: PackageIcon },
   { href: '/discrepancies', label: 'Discrepancy Reports', Icon: ReceiptIcon },
   { href: '/tickets', label: 'Tickets', Icon: TicketIcon },
+  { href: '/calls', label: 'Calls', Icon: PhoneIcon },
   { href: '/assistant', label: 'Assistant', Icon: BotIcon },
 ];
 
@@ -81,6 +86,9 @@ export function Sidebar({ userEmail }: { userEmail?: string | null }) {
             </div>
             <div className="text-[11px] text-sidebar-foreground/60">Operations</div>
           </div>
+        </div>
+        <div className="mt-3 text-[11px] text-sidebar-foreground/50">
+          Powered by <span className="font-medium text-sidebar-foreground/80">Onda</span> · logistics AI
         </div>
         <form action="/api/auth/signout" method="post" className="mt-3">
           <button

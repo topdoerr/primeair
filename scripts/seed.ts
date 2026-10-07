@@ -239,6 +239,93 @@ async function main() {
   ];
   await upsert('tickets', ticketRows, 'vapi_call_id');
 
+  // --- Milestone tracking + CargoWise sync + recurring-client bookings -----
+  const H = 3600_000;
+  const D = 24 * H;
+  const ago = (ms: number) => new Date(now - ms).toISOString();
+  const dateIn = (days: number) => new Date(now + days * D).toISOString().slice(0, 10);
+  const PORTAL = 'Amerijet cargo portal';
+  const ms = (
+    master_bill_number: string,
+    code: string,
+    label: string,
+    sequence: number,
+    status: string,
+    occurred_at: string | null,
+    location: string,
+    source: string | null,
+    notes: string | null,
+  ) => ({ master_bill_number, code, label, sequence, status, occurred_at, location, source, notes });
+
+  const milestoneRows = [
+    // fresh cut flowers — arrived, cleared, available for pickup
+    ms('810-21961413', 'BOOKED', 'Booking confirmed', 1, 'COMPLETED', ago(5 * D), 'MIA', 'CargoWise', 'Booked by Flores de Borinquen'),
+    ms('810-21961413', 'RECEIVED_ORIGIN', 'Received at origin (MIA)', 2, 'COMPLETED', ago(4 * D), 'MIA', PORTAL, '139 pieces, 1,031 kg · keep in cooler'),
+    ms('810-21961413', 'DEPARTED', 'Departed MIA', 3, 'COMPLETED', ago(3 * D), 'MIA', PORTAL, 'Flight M68741'),
+    ms('810-21961413', 'ARRIVED', 'Arrived SJU', 4, 'COMPLETED', ago(3 * D - 4 * H), 'SJU', PORTAL, 'Flight M68741'),
+    ms('810-21961413', 'AVAILABLE', 'Customs cleared · available for pickup', 5, 'COMPLETED', ago(3 * H), 'SJU', PORTAL, null),
+    ms('810-21961413', 'DELIVERED', 'Delivered / picked up', 6, 'PENDING', null, 'SJU', null, null),
+    // empty plastic bottles — arrived, customs clearance in progress
+    ms('810-21961306', 'BOOKED', 'Booking confirmed', 1, 'COMPLETED', ago(4 * D), 'MIA', 'CargoWise', 'Booked by Caribe Bottling Co.'),
+    ms('810-21961306', 'RECEIVED_ORIGIN', 'Received at origin (MIA)', 2, 'COMPLETED', ago(3 * D), 'MIA', PORTAL, '25 pallets, 4,617 kg'),
+    ms('810-21961306', 'DEPARTED', 'Departed MIA', 3, 'COMPLETED', ago(2 * D), 'MIA', PORTAL, 'Flight M68641'),
+    ms('810-21961306', 'ARRIVED', 'Arrived SJU', 4, 'COMPLETED', ago(1 * H), 'SJU', PORTAL, 'Flight M68641'),
+    ms('810-21961306', 'AVAILABLE', 'Customs cleared · available for pickup', 5, 'IN_PROGRESS', null, 'SJU', PORTAL, 'Customs clearance in progress'),
+    ms('810-21961306', 'DELIVERED', 'Delivered / picked up', 6, 'PENDING', null, 'SJU', null, null),
+    // pharmaceuticals (cold chain) — in the air
+    ms('810-21961500', 'BOOKED', 'Booking confirmed', 1, 'COMPLETED', ago(2 * D), 'MIA', 'CargoWise', 'Booked by Farmacias del Caribe'),
+    ms('810-21961500', 'RECEIVED_ORIGIN', 'Received at origin (MIA)', 2, 'COMPLETED', ago(1 * D), 'MIA', PORTAL, 'Cold chain verified 2–8 °C'),
+    ms('810-21961500', 'DEPARTED', 'Departed MIA', 3, 'COMPLETED', ago(2 * H), 'MIA', PORTAL, 'Flight M68741'),
+    ms('810-21961500', 'ARRIVED', 'Arrived SJU', 4, 'IN_PROGRESS', null, 'SJU', PORTAL, 'In flight — ETA today'),
+    ms('810-21961500', 'AVAILABLE', 'Customs cleared · available for pickup', 5, 'PENDING', null, 'SJU', null, null),
+    ms('810-21961500', 'DELIVERED', 'Delivered / picked up', 6, 'PENDING', null, 'SJU', null, null),
+  ];
+  await upsert('shipment_milestones', milestoneRows, 'master_bill_number,code');
+
+  const customerRows = [
+    { account_code: 'FDC-001', name: 'Farmacias del Caribe', contact_name: 'Marisol Rivera', contact_phone: '+1 787-555-0142', contact_email: 'ops@farmaciasdelcaribe.example', default_commodity: 'Pharmaceuticals (cold chain)', is_recurring: true },
+    { account_code: 'FLB-002', name: 'Flores de Borinquen', contact_name: 'Luis Ortiz', contact_phone: '+1 787-555-0187', contact_email: 'luis@floresborinquen.example', default_commodity: 'Fresh cut flowers', is_recurring: true },
+    { account_code: 'CBC-003', name: 'Caribe Bottling Co.', contact_name: 'Ana Méndez', contact_phone: '+1 787-555-0119', contact_email: 'logistics@caribebottling.example', default_commodity: 'Empty plastic bottles', is_recurring: true },
+    { account_code: 'MDS-004', name: 'MedSupply PR', contact_name: 'Carlos Vega', contact_phone: '+1 787-555-0163', contact_email: 'cvega@medsupplypr.example', default_commodity: 'Controlled medications', is_recurring: true },
+  ];
+  await upsert('customers', customerRows, 'account_code');
+
+  // Integration events and bookings have no natural key: seed once, when empty.
+  const { count: eventCount } = await db
+    .from('integration_events')
+    .select('id', { count: 'exact', head: true });
+  if (!eventCount) {
+    const CW = 'CargoWise e-adapter';
+    const eventRows = [
+      { master_bill_number: '810-21961413', kind: 'PORTAL_PULL', system: PORTAL, status: 'ACKNOWLEDGED', external_ref: null, summary: 'Milestone "Customs cleared · available for pickup" confirmed by portal', payload: { flight: 'M68741', milestone: 'AVAILABLE' }, created_at: ago(3 * H) },
+      { master_bill_number: '810-21961413', kind: 'CARGOWISE_PUSH', system: CW, status: 'ACKNOWLEDGED', external_ref: 'CW-260811-7K2Q', summary: '5 of 6 milestones pushed to CargoWise', payload: { masterBillNumber: '810-21961413', milestonesPushed: 5 }, created_at: ago(3 * H - 5 * 60_000) },
+      { master_bill_number: '810-21961306', kind: 'PORTAL_PULL', system: PORTAL, status: 'ACKNOWLEDGED', external_ref: null, summary: 'Milestone "Arrived SJU" confirmed by portal', payload: { flight: 'M68641', milestone: 'ARRIVED' }, created_at: ago(1 * H) },
+      { master_bill_number: '810-21961306', kind: 'CARGOWISE_PUSH', system: CW, status: 'ACKNOWLEDGED', external_ref: 'CW-260811-M4HD', summary: '4 of 6 milestones pushed to CargoWise', payload: { masterBillNumber: '810-21961306', milestonesPushed: 4 }, created_at: ago(55 * 60_000) },
+      { master_bill_number: '810-21961500', kind: 'PORTAL_PULL', system: PORTAL, status: 'ACKNOWLEDGED', external_ref: null, summary: 'Milestone "Departed MIA" confirmed by portal', payload: { flight: 'M68741', milestone: 'DEPARTED' }, created_at: ago(2 * H) },
+      { master_bill_number: '810-21961500', kind: 'CARGOWISE_PUSH', system: CW, status: 'ACKNOWLEDGED', external_ref: 'CW-260811-Z9PA', summary: '3 of 6 milestones pushed to CargoWise', payload: { masterBillNumber: '810-21961500', milestonesPushed: 3 }, created_at: ago(2 * H - 10 * 60_000) },
+    ];
+    const { error } = await db.from('integration_events').insert(eventRows);
+    if (error) throw new Error(`integration_events: ${error.message}`);
+    console.log(`  integration_events: ${eventRows.length} row(s) inserted`);
+  }
+
+  const { count: bookingCount } = await db
+    .from('bookings')
+    .select('id', { count: 'exact', head: true });
+  if (!bookingCount) {
+    const { data: customers } = await db.from('customers').select('id, name');
+    const idFor = (name: string) =>
+      (customers as { id: string; name: string }[] | null)?.find((c) => c.name === name)?.id ?? null;
+    const bookingRows = [
+      { customer_id: idFor('Farmacias del Caribe'), customer_name: 'Farmacias del Caribe', commodity: 'Pharmaceuticals (cold chain)', pieces: 4, weight_kg: 1800, requested_date: dateIn(2), flight: 'M68741', status: 'CONFIRMED', source: 'dashboard', cargowise_ref: 'CW-260811-B1FD', notes: 'Recurring weekly cold-chain lane', created_at: ago(1 * D) },
+      { customer_id: idFor('Flores de Borinquen'), customer_name: 'Flores de Borinquen', commodity: 'Fresh cut flowers', pieces: 139, weight_kg: 1031, requested_date: dateIn(1), flight: 'M68741', status: 'CONFIRMED', source: 'voice_agent', cargowise_ref: 'CW-260811-B2FL', notes: 'Booked by the voice agent on behalf of the client', created_at: ago(6 * H) },
+      { customer_id: idFor('MedSupply PR'), customer_name: 'MedSupply PR', commodity: 'Controlled medications', pieces: 2, weight_kg: 150, requested_date: dateIn(3), flight: null, status: 'REQUESTED', source: 'voice_agent', cargowise_ref: null, notes: 'Temperature-controlled 2–8 °C · awaiting confirmation', created_at: ago(40 * 60_000) },
+    ];
+    const { error } = await db.from('bookings').insert(bookingRows);
+    if (error) throw new Error(`bookings: ${error.message}`);
+    console.log(`  bookings: ${bookingRows.length} row(s) inserted`);
+  }
+
   console.log('✅ Seed complete.');
 }
 

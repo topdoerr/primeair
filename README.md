@@ -5,7 +5,11 @@ A Next.js dashboard for **Prime Air Corp** (air cargo, **MIA → SJU**) that uni
 1. An **inbound Vapi voice agent** ("Prime Air AWB Status") that answers
    *"where is my cargo"* / *"when can I pick it up"* and schedules pickups, and
 2. **Operational visibility** into calls, air waybills, and invoice
-   discrepancy reports.
+   discrepancy reports, and
+3. **Logistics operations** — **milestone tracking** (flight / air waybill →
+   cargo-portal milestones → **CargoWise** via the e-adapter REST integration)
+   and **bookings** for recurring clients, created from the dashboard or by
+   the voice agent.
 
 > **Pilot scope (confirmed):** the assistant is **inbound only** (no outbound
 > callbacks) and pickups are **stored in Supabase only** (no external calendar
@@ -30,7 +34,9 @@ The service-role key and `VAPI_API_KEY` are used **server-side only**.
 
 | Route            | What it shows |
 |------------------|---------------|
-| `/` Overview     | KPIs: calls today, % self-served, top intents, AWBs flagged |
+| `/` Overview     | KPIs: shipments tracked, in transit, CargoWise syncs today, bookings; milestone snapshot, recent bookings, voice agent today |
+| `/tracking`      | **Milestone Tracking** — search an AWB or a flight; per-shipment timeline (booked → received → departed → arrived → available → delivered), **Pull from cargo portal**, **Push to CargoWise**, sync status + integration log |
+| `/bookings`      | **Bookings** — list + new booking for a recurring client; each booking is created in CargoWise via the e-adapter and gets a reference |
 | `/calls`         | Recent calls, transcript drawer, intent + referenced AWB, **Sync calls** button |
 | `/awb`           | Search by master bill → full record + charge breakdown + reconciliation |
 | `/discrepancies` | Reports list + detail rendering the `DiscrepancyReport` XML with a **RECONCILED / FLAGGED** badge |
@@ -44,6 +50,9 @@ The service-role key and `VAPI_API_KEY` are used **server-side only**.
 |-------|---------|
 | `POST /api/awb-lookup` | **Tool the assistant calls mid-call.** `{ masterBillNumber }` → `{ flight, origin, destination, status, cargoReady, availableForPickup, chargesSummary, commodity }`. Reads Supabase. |
 | `POST /api/pickup` | **Scheduling tool.** Creates a pickup/delivery window in Supabase. |
+| `POST /api/tracking/pull` | `{ masterBillNumber }` or `{ flight }` → looks the shipment(s) up on the carrier's cargo portal and records the next milestone. Requires a signed-in user. |
+| `POST /api/cargowise/push` | **CargoWise e-adapter integration point.** `{ masterBillNumber }` → pushes the shipment's milestones to CargoWise through the e-adapter REST API and logs the acknowledgement + reference. Requires a signed-in user. |
+| `POST /api/bookings` | Creates a booking for a (recurring) client and creates it in CargoWise via the e-adapter. Accepts the Vapi tool-call envelope so the voice agent can book on a client's behalf, or a plain body from the dashboard (signed-in user). |
 | `POST /api/vapi/webhook` | Receives Vapi `end-of-call-report` events (auth via `x-vapi-secret`) and upserts the call into Supabase. |
 | `POST /api/sync-calls` | Manual "Sync calls" — pulls calls from the Vapi MCP server and upserts them. Requires a signed-in user. |
 | `GET/PATCH /api/assistant` | Read / update the assistant via the Vapi MCP server. |
@@ -58,6 +67,13 @@ The service-role key and `VAPI_API_KEY` are used **server-side only**.
 - **calls** — `vapi_call_id`, caller, assistant_id, started/ended, duration,
   transcript, `detected_intent`, `referenced_awb`, outcome, raw payload.
 - **pickups** — `master_bill_number`, window_start/end, contact, status, source.
+- **shipment_milestones** — one row per (AWB, step): code, label, sequence,
+  status (`COMPLETED` / `IN_PROGRESS` / `PENDING`), occurred_at, location, source.
+- **integration_events** — audit log of `PORTAL_PULL`s and `CARGOWISE_PUSH`es:
+  system, status (`SENT` / `ACKNOWLEDGED` / `FAILED`), external_ref, payload.
+- **customers** — recurring / fixed clients (account_code, contact, default commodity).
+- **bookings** — `BK-0001`-numbered bookings: client, route, commodity, pieces,
+  weight, requested_date, status, source (`dashboard` / `voice_agent`), `cargowise_ref`.
 - **discrepancy_reports** — `message_id`, carrier, invoice, `payload_xml`,
   status (`RECONCILED` / `FLAGGED`), created_at.
 
@@ -89,6 +105,10 @@ Fill in:
 - `VAPI_WEBHOOK_SECRET` — any long random string.
 - `APP_BASE_URL` — your app's public URL (used when wiring the assistant's
   tool URLs). Use your Vercel URL once deployed.
+- `CARGOWISE_EADAPTER_URL` / `CARGOWISE_EADAPTER_TOKEN` — *optional.* When set,
+  milestone and booking pushes are POSTed to the CargoWise e-adapter REST
+  endpoint and its returned `reference` is stored. When unset, pushes are
+  simulated and acknowledged locally so the flow still runs end to end.
 
 ### 3. Create the schema + seed
 
@@ -98,18 +118,20 @@ Apply the migration and seed. Two options:
 
 ```bash
 # with the Supabase CLI linked to your project:
-supabase db push          # or paste supabase/migrations/0001_init.sql
-# then paste / run supabase/seed.sql
+supabase db push          # or paste supabase/migrations/0001 … 0005 in order
+# then paste / run supabase/seed.sql, then supabase/seed_milestones.sql
 ```
 
-**Or programmatic seed (after the migration is applied):**
+**Or programmatic seed (after the migrations are applied):**
 
 ```bash
 npm run db:seed
 ```
 
 Both seed the two real AWBs (`810-21961413`, `810-21961306`, both RECONCILED)
-plus one synthetic **FLAGGED** AWB so the badge logic is visible immediately.
+plus one synthetic **FLAGGED** AWB so the badge logic is visible immediately,
+along with milestone timelines for all three, their portal-pull / CargoWise-push
+history, four recurring clients, and three bookings.
 
 ### 4. Create a login user
 
