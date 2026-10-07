@@ -1,5 +1,20 @@
-import Link from 'next/link';
-import { PageHeader, Badge } from '@/components/ui';
+import {
+  EmptyState,
+  Id,
+  Null,
+  Num,
+  PageHeader,
+  RowLink,
+  StatusBadge,
+  Table,
+  TBody,
+  TD,
+  TH,
+  THead,
+  Toolbar,
+  TR,
+} from '@/components/ui';
+import { ChevronRightIcon, ReceiptIcon } from '@/components/icons';
 import type { DiscrepancyReport } from '@/lib/types';
 
 export type DiscrepanciesViewProps = {
@@ -8,58 +23,77 @@ export type DiscrepanciesViewProps = {
 };
 
 export function DiscrepanciesView({ reports }: DiscrepanciesViewProps) {
+  const flagged = reports.filter((r) => r.status === 'FLAGGED').length;
+
   return (
     <div>
       <PageHeader
-        title="Discrepancy Reports"
-        subtitle="Invoice reconciliation output — flagged when weight charge + surcharges ≠ total collect"
+        title="Discrepancies"
+        subtitle="Invoice reconciliation output, flagged when weight charge plus surcharges does not equal total collect."
       />
 
-      <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-400">
+      <Toolbar>
+        <span>
+          <Num className="text-ink">{reports.length}</Num> {reports.length === 1 ? 'report' : 'reports'}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <StatusBadge size="sm" status="FLAGGED" />
+          <Num className="text-ink">{flagged}</Num>
+        </span>
+      </Toolbar>
+
+      <Table
+        minWidth={760}
+        footer="Open a report for the parsed charges, the reconciliation verdict and the raw DiscrepancyReport XML."
+      >
+        <THead>
+          <tr>
+            <TH>Message ID</TH>
+            <TH>Carrier</TH>
+            <TH>Invoice</TH>
+            <TH>AWB</TH>
+            <TH>Status</TH>
+            <TH align="right">
+              <span className="sr-only">Open</span>
+            </TH>
+          </tr>
+        </THead>
+        <TBody>
+          {reports.length === 0 ? (
             <tr>
-              <th className="px-4 py-3 font-medium">Message ID</th>
-              <th className="px-4 py-3 font-medium">Carrier</th>
-              <th className="px-4 py-3 font-medium">Invoice</th>
-              <th className="px-4 py-3 font-medium">AWB</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium"></th>
+              <td colSpan={6}>
+                <EmptyState
+                  icon={<ReceiptIcon />}
+                  title="No discrepancy reports"
+                  description="Reports are generated when a carrier invoice does not reconcile."
+                />
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {reports.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-400">
-                  No discrepancy reports yet.
-                </td>
-              </tr>
-            ) : (
-              reports.map((r) => (
-                <tr key={r.id} className="border-t border-slate-100 hover:bg-slate-50">
-                  <td className="px-4 py-3 font-mono text-xs text-slate-600">{r.message_id}</td>
-                  <td className="px-4 py-3 text-slate-700">{r.carrier_code}</td>
-                  <td className="px-4 py-3 text-slate-700">{r.invoice_number ?? '—'}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-slate-600">
-                    {r.master_bill_number ?? '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge>{r.status}</Badge>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/discrepancies/${r.id}`}
-                      className="text-xs text-brand-600 hover:underline"
-                    >
-                      View →
-                    </Link>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+          ) : (
+            reports.map((r) => {
+              const href = `/discrepancies/${r.id}`;
+              return (
+                <TR key={r.id} href={href}>
+                  <TD identifier>
+                    <RowLink href={href}>{r.message_id}</RowLink>
+                  </TD>
+                  <TD>
+                    <Id>{r.carrier_code}</Id>
+                  </TD>
+                  <TD>{r.invoice_number ? <Id>{r.invoice_number}</Id> : <Null />}</TD>
+                  <TD>{r.master_bill_number ? <Id>{r.master_bill_number}</Id> : <Null />}</TD>
+                  <TD>
+                    <StatusBadge status={r.status} />
+                  </TD>
+                  <TD align="right">
+                    <ChevronRightIcon className="inline-block h-4 w-4 text-ink-4 group-hover:text-ink-3" />
+                  </TD>
+                </TR>
+              );
+            })
+          )}
+        </TBody>
+      </Table>
     </div>
   );
 }

@@ -1,5 +1,22 @@
-import Link from 'next/link';
-import { PageHeader, Card, Badge } from '@/components/ui';
+import {
+  Button,
+  Card,
+  CardBody,
+  CardFooter,
+  CardHeader,
+  Dotted,
+  EmptyState,
+  Id,
+  InlineNotice,
+  Input,
+  KeyValue,
+  LedgerRow,
+  LinkButton,
+  Num,
+  PageHeader,
+  StatusBadge,
+} from '@/components/ui';
+import { ArrowUpRightIcon, PackageIcon, SearchIcon } from '@/components/icons';
 import { reconcile, formatUSD } from '@/lib/reconcile';
 import type { AirWaybill } from '@/lib/types';
 
@@ -9,6 +26,15 @@ export type AwbLookupViewProps = {
   notFound: boolean;
 };
 
+function fmtWhen(iso: string): string {
+  return new Date(iso).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 export function AwbLookupView({ q, awb, notFound }: AwbLookupViewProps) {
   const recon = awb
     ? reconcile(Number(awb.weight_charge), Number(awb.other_charges), Number(awb.total_collect))
@@ -17,120 +43,136 @@ export function AwbLookupView({ q, awb, notFound }: AwbLookupViewProps) {
   return (
     <div>
       <PageHeader
-        title="AWB Lookup"
-        subtitle="Search a master air waybill and review the full record + charge breakdown"
+        title="AWB lookup"
+        subtitle="Search a master air waybill to review the record and charge reconciliation."
+        action={
+          <form method="get" className="flex items-center gap-2">
+            <Input
+              name="q"
+              defaultValue={q}
+              mono
+              leading={<SearchIcon />}
+              placeholder="e.g. 810-21961413"
+              aria-label="Master air waybill number"
+              autoComplete="off"
+              className="w-[280px]"
+            />
+            <Button type="submit" variant="primary" size="md">
+              Search
+            </Button>
+          </form>
+        }
       />
 
-      <form method="get" className="mb-6 flex max-w-md gap-2">
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="810-21961413"
-          className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-        />
-        <button
-          type="submit"
-          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
-        >
-          Search
-        </button>
-      </form>
+      {!q && (
+        <Card>
+          <EmptyState
+            icon={<PackageIcon />}
+            title="Search an air waybill"
+            description="Enter a master air waybill number to see its record, charges and reconciliation status."
+          />
+        </Card>
+      )}
 
       {q && notFound && (
         <Card>
-          <p className="text-sm text-slate-500">
-            No air waybill found for <span className="font-mono">{q}</span>. Try{' '}
-            <span className="font-mono">810-21961413</span> or{' '}
-            <span className="font-mono">810-21961306</span>.
-          </p>
+          <EmptyState
+            icon={<SearchIcon />}
+            title={
+              <>
+                No air waybill found for <Id>{q}</Id>
+              </>
+            }
+            description="Try 810-21961413 or 810-21961306."
+            action={
+              <LinkButton href="/awb" variant="secondary" size="sm">
+                Clear search
+              </LinkButton>
+            }
+          />
         </Card>
       )}
 
       {awb && recon && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <div className="font-mono text-lg font-semibold text-slate-900">
-                  {awb.master_bill_number}
-                </div>
-                <div className="text-sm text-slate-500">{awb.commodity ?? '—'}</div>
-              </div>
-              <Badge>{awb.status}</Badge>
-            </div>
-            <dl className="grid grid-cols-2 gap-4 text-sm">
-              <Field label="Carrier" value={awb.carrier_code} />
-              <Field label="Flight" value={awb.flight ?? '—'} />
-              <Field label="Origin" value={awb.origin} />
-              <Field label="Destination" value={awb.destination} />
-              <Field
-                label="Cargo ready"
-                value={
-                  awb.cargo_ready_at
-                    ? new Date(awb.cargo_ready_at).toLocaleString('en-US')
-                    : 'Not yet'
+        <>
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            <Card>
+              <CardHeader
+                title={
+                  <span className="font-mono text-base font-medium tracking-[-0.01em] text-ink">
+                    {awb.master_bill_number}
+                  </span>
                 }
-              />
-              <Field
-                label="Available for pickup"
-                value={awb.status === 'AVAILABLE' ? 'Yes' : 'No'}
-              />
-            </dl>
-          </Card>
+                actions={<StatusBadge status={awb.status} />}
+              >
+                <span className="truncate text-xs text-ink-3">{awb.commodity ?? 'Cargo'}</span>
+              </CardHeader>
+              <CardBody>
+                <KeyValue
+                  columns={2}
+                  rows={[
+                    { key: 'carrier', label: 'Carrier', value: <Id>{awb.carrier_code}</Id> },
+                    {
+                      key: 'flight',
+                      label: 'Flight',
+                      value: awb.flight ? <Id>{awb.flight}</Id> : <span className="text-ink-3">Not assigned</span>,
+                    },
+                    { key: 'origin', label: 'Origin', value: <Id>{awb.origin}</Id> },
+                    { key: 'destination', label: 'Destination', value: <Id>{awb.destination}</Id> },
+                    {
+                      key: 'ready',
+                      label: 'Cargo ready',
+                      value: awb.cargo_ready_at ? (
+                        <Num>{fmtWhen(awb.cargo_ready_at)}</Num>
+                      ) : (
+                        <span className="text-ink-3">Not yet</span>
+                      ),
+                    },
+                    {
+                      key: 'pickup',
+                      label: 'Available for pickup',
+                      value:
+                        awb.status === 'AVAILABLE' ? <Dotted tone="ok">Yes</Dotted> : <Dotted tone="neutral">No</Dotted>,
+                    },
+                  ]}
+                />
+              </CardBody>
+            </Card>
 
-          <Card>
-            <div className="mb-3 flex items-center justify-between">
-              <div className="text-sm font-semibold text-slate-900">Charge breakdown</div>
-              <Badge>{recon.status}</Badge>
-            </div>
-            <dl className="space-y-2 text-sm">
-              <Row label="Weight charge" value={formatUSD(Number(awb.weight_charge))} />
-              <Row label="Other charges" value={formatUSD(Number(awb.other_charges))} />
-              <div className="border-t border-slate-200 pt-2">
-                <Row label="Total collect" value={formatUSD(Number(awb.total_collect))} strong />
-              </div>
-              <div className="mt-2 rounded-md bg-slate-50 p-3 text-xs text-slate-500">
-                Expected (weight + other): {formatUSD(recon.expected)}
-                {recon.status === 'FLAGGED' ? (
-                  <span className="mt-1 block font-medium text-red-600">
-                    Δ {formatUSD(recon.delta)} — flagged for review
-                  </span>
-                ) : (
-                  <span className="mt-1 block font-medium text-emerald-600">
-                    Matches total collect
-                  </span>
-                )}
-              </div>
-            </dl>
-          </Card>
-        </div>
+            <Card>
+              <CardHeader title="Charge breakdown" actions={<StatusBadge status={recon.status} />} />
+              <CardBody>
+                <LedgerRow label="Weight charge" value={formatUSD(Number(awb.weight_charge))} />
+                <LedgerRow label="Other charges" value={formatUSD(Number(awb.other_charges))} />
+                <LedgerRow label="Total collect" value={formatUSD(Number(awb.total_collect))} strong />
+              </CardBody>
+              <CardFooter className="px-3 py-3">
+                <div className="rounded-md bg-surface-sunken p-3">
+                  <div className="flex items-baseline justify-between gap-3 text-xs text-ink-3">
+                    <span>Expected (weight + other)</span>
+                    <Num className="text-ink-2">{formatUSD(recon.expected)}</Num>
+                  </div>
+                  {recon.status === 'FLAGGED' ? (
+                    <InlineNotice tone="danger" className="mt-1.5 w-full">
+                      Difference <Num>{formatUSD(recon.delta)}</Num>, flagged for review
+                    </InlineNotice>
+                  ) : (
+                    <InlineNotice tone="ok" className="mt-1.5 w-full">
+                      Matches total collect
+                    </InlineNotice>
+                  )}
+                </div>
+              </CardFooter>
+            </Card>
+          </div>
+
+          <div className="mt-4">
+            <LinkButton href="/discrepancies" variant="ghost" size="sm" trailingIcon={<ArrowUpRightIcon />}>
+              View related discrepancy reports
+            </LinkButton>
+          </div>
+        </>
       )}
-
-      {awb && (
-        <div className="mt-4">
-          <Link href="/discrepancies" className="text-sm text-brand-600 hover:underline">
-            View related discrepancy reports →
-          </Link>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="text-xs uppercase text-slate-400">{label}</dt>
-      <dd className="mt-0.5 text-slate-700">{value}</dd>
-    </div>
-  );
-}
-
-function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-slate-500">{label}</span>
-      <span className={strong ? 'font-semibold text-slate-900' : 'text-slate-700'}>{value}</span>
     </div>
   );
 }

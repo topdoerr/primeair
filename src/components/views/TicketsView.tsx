@@ -1,5 +1,20 @@
-import Link from 'next/link';
-import { PageHeader, Card, Badge, IntentBadge } from '@/components/ui';
+import {
+  EmptyState,
+  Id,
+  IntentBadge,
+  Null,
+  Num,
+  PageHeader,
+  StatusBadge,
+  Table,
+  TBody,
+  TD,
+  TH,
+  THead,
+  Toolbar,
+  TR,
+} from '@/components/ui';
+import { TicketIcon } from '@/components/icons';
 import type { Ticket } from '@/lib/types';
 
 function fmtDate(iso: string): string {
@@ -9,6 +24,10 @@ function fmtDate(iso: string): string {
     hour: 'numeric',
     minute: '2-digit',
   });
+}
+
+function ticketRef(n: number): string {
+  return `PA-${String(n).padStart(4, '0')}`;
 }
 
 export type TicketsViewProps = {
@@ -21,86 +40,88 @@ export function TicketsView({ tickets }: TicketsViewProps) {
 
   return (
     <div>
-      <PageHeader
-        title="Tickets"
-        subtitle="Auto-created after every call for follow-up by the ops team"
-      />
+      <PageHeader title="Tickets" subtitle="Created automatically after every call for follow-up by the ops team." />
 
-      <div className="mb-4 text-sm text-slate-500">
-        {tickets.length} total · <span className="font-medium text-amber-700">{open} open</span>
-      </div>
+      <Toolbar>
+        <span>
+          <Num className="text-ink">{tickets.length}</Num> {tickets.length === 1 ? 'ticket' : 'tickets'}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <StatusBadge size="sm" status="OPEN" />
+          <Num className="text-ink">{open}</Num>
+        </span>
+      </Toolbar>
 
-      <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-400">
+      <Table
+        minWidth={880}
+        footer={
+          <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
+            <span>Tickets are created when a call ends and when you run Sync calls. Self-served calls open as</span>
+            <StatusBadge size="sm" status="LOW" />
+            <span>and close; pickups and invoice questions stay</span>
+            <StatusBadge size="sm" status="OPEN" />
+            <span>for the team.</span>
+          </span>
+        }
+      >
+        <THead>
+          <tr>
+            <TH>#</TH>
+            <TH>Subject</TH>
+            <TH>Type</TH>
+            <TH>AWB</TH>
+            <TH>Priority</TH>
+            <TH>Status</TH>
+            <TH>Created</TH>
+          </tr>
+        </THead>
+        <TBody>
+          {tickets.length === 0 ? (
             <tr>
-              <th className="px-4 py-3 font-medium">#</th>
-              <th className="px-4 py-3 font-medium">Subject</th>
-              <th className="px-4 py-3 font-medium">Type</th>
-              <th className="px-4 py-3 font-medium">AWB</th>
-              <th className="px-4 py-3 font-medium">Priority</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Created</th>
+              <td colSpan={7}>
+                <EmptyState
+                  icon={<TicketIcon />}
+                  title="No tickets yet"
+                  description="One is created automatically after each call."
+                />
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {tickets.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-sm text-slate-400">
-                  No tickets yet. One is created automatically after each call.
-                </td>
-              </tr>
-            ) : (
-              tickets.map((t) => (
-                <tr key={t.id} className="border-t border-slate-100 hover:bg-slate-50">
-                  <td className="px-4 py-3 font-mono text-xs text-slate-500">
-                    PA-{String(t.number).padStart(4, '0')}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="text-slate-800">{t.subject}</div>
-                    {t.description && (
-                      <div className="mt-0.5 line-clamp-1 max-w-md text-xs text-slate-400">
-                        {t.description}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <IntentBadge intent={t.category} />
-                  </td>
-                  <td className="px-4 py-3">
-                    {t.master_bill_number ? (
-                      <Link
-                        href={`/awb?q=${encodeURIComponent(t.master_bill_number)}`}
-                        className="font-mono text-xs text-brand-600 hover:underline"
-                      >
-                        {t.master_bill_number}
-                      </Link>
-                    ) : (
-                      <span className="text-slate-300">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge>{t.priority.toUpperCase()}</Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge>{t.status.toUpperCase()}</Badge>
-                  </td>
-                  <td className="px-4 py-3 text-slate-500">{fmtDate(t.created_at)}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <Card className="mt-6">
-        <p className="text-sm text-slate-500">
-          Tickets are created automatically when a call ends (via the Vapi webhook) and when you
-          run <span className="font-medium">Sync calls</span>. Calls fully self-served by the agent
-          are opened as <Badge>LOW</Badge> and closed; pickups and invoice questions stay{' '}
-          <Badge>OPEN</Badge> for the team.
-        </p>
-      </Card>
+          ) : (
+            tickets.map((t) => (
+              <TR key={t.id}>
+                <TD identifier className="whitespace-nowrap">
+                  {ticketRef(t.number)}
+                </TD>
+                <TD>
+                  <div className="font-medium text-ink">{t.subject}</div>
+                  {t.description && (
+                    <div className="mt-0.5 line-clamp-1 max-w-[48ch] text-xs text-ink-3">{t.description}</div>
+                  )}
+                </TD>
+                <TD>
+                  <IntentBadge intent={t.category} />
+                </TD>
+                <TD>
+                  {t.master_bill_number ? (
+                    <Id href={`/awb?q=${encodeURIComponent(t.master_bill_number)}`}>{t.master_bill_number}</Id>
+                  ) : (
+                    <Null />
+                  )}
+                </TD>
+                <TD>
+                  <StatusBadge status={t.priority} />
+                </TD>
+                <TD>
+                  <StatusBadge status={t.status} />
+                </TD>
+                <TD>
+                  <span className="whitespace-nowrap font-mono text-xs text-ink-3 tnum">{fmtDate(t.created_at)}</span>
+                </TD>
+              </TR>
+            ))
+          )}
+        </TBody>
+      </Table>
     </div>
   );
 }
