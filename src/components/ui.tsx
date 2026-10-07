@@ -295,7 +295,7 @@ export function KpiStrip({ children, className }: { children: ReactNode; classNa
   return (
     <div
       className={cn(
-        'grid grid-cols-2 divide-y divide-line rounded-lg border border-line bg-surface lg:grid-cols-[1.6fr_1fr_1fr_1fr] lg:divide-x lg:divide-y-0',
+        'grid grid-cols-2 divide-y divide-line rounded-lg border border-line bg-surface xl:grid-cols-[1.6fr_1fr_1fr_1fr] xl:divide-x xl:divide-y-0',
         className,
       )}
     >
