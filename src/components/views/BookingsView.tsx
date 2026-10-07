@@ -1,15 +1,40 @@
-import { Card, PageHeader, Badge } from '@/components/ui';
+import {
+  Card,
+  CardBody,
+  CardFooter,
+  CardHeader,
+  Dot,
+  EmptyState,
+  Id,
+  Null,
+  Num,
+  PageHeader,
+  Route,
+  StatusBadge,
+  TBody,
+  TD,
+  TH,
+  THead,
+  TR,
+  Table,
+  Tag,
+  Toolbar,
+  statusSpec,
+} from '@/components/ui';
+import { BookingIcon, UserIcon } from '@/components/icons';
 import { BookingForm } from '@/components/BookingForm';
 import type { Booking, Customer } from '@/lib/types';
 
-function fmtDate(iso: string | null): string {
-  if (!iso) return '—';
+/** "Oct 8" from a date-only ISO string; null when there is no date. */
+function fmtDate(iso: string | null): string | null {
+  if (!iso) return null;
   return new Date(`${iso}T12:00:00`).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
   });
 }
 
+/** "Oct 7, 3:45 PM" for the created-at column. */
 function fmtWhen(iso: string): string {
   return new Date(iso).toLocaleString('en-US', {
     month: 'short',
@@ -19,6 +44,15 @@ function fmtWhen(iso: string): string {
   });
 }
 
+/** One fixed decimal so a column of kg values aligns on the decimal point. */
+function fmtKg(kg: number): string {
+  return Number(kg).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
+function bookingNumber(n: number): string {
+  return `BK-${String(n).padStart(4, '0')}`;
+}
+
 export type BookingsViewProps = {
   /** All bookings, newest first (ordered by created_at desc). */
   bookings: Booking[];
@@ -26,122 +60,168 @@ export type BookingsViewProps = {
   customers: Customer[];
 };
 
+const COLUMNS = 10;
+
 export function BookingsView({ bookings, customers }: BookingsViewProps) {
   const confirmed = bookings.filter((b) => b.status === 'CONFIRMED').length;
+  const requested = bookings.filter((b) => b.status === 'REQUESTED').length;
 
   return (
     <div>
       <PageHeader
         title="Bookings"
-        subtitle="Recurring clients book a shipment here or through the voice agent — it is created in CargoWise via the e-adapter"
+        subtitle="Recurring clients book here or through the voice agent; each booking is created in CargoWise via the e-adapter."
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <div className="mb-3 text-sm text-slate-500">
-            {bookings.length} total ·{' '}
-            <span className="font-medium text-accent-700">{confirmed} confirmed</span>
-          </div>
-          <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase text-slate-400">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+        {/* Bookings ledger */}
+        <div className="min-w-0">
+          <Toolbar>
+            <span>
+              <Num className="text-ink">{bookings.length}</Num> {bookings.length === 1 ? 'booking' : 'bookings'}
+            </span>
+            <Dot />
+            <span className="inline-flex items-center gap-1.5">
+              <StatusBadge size="sm" status="CONFIRMED" />
+              <Num className="text-ink">{confirmed}</Num>
+            </span>
+            {requested > 0 && (
+              <>
+                <Dot />
+                <span className="inline-flex items-center gap-1.5">
+                  <StatusBadge size="sm" status="REQUESTED" />
+                  <Num className="text-ink">{requested}</Num>
+                </span>
+              </>
+            )}
+          </Toolbar>
+
+          <Table
+            minWidth={920}
+            footer="Bookings from the dashboard and the voice agent share one ledger. A CargoWise reference is written back as soon as the e-adapter acknowledges the booking."
+          >
+            <THead>
+              <tr>
+                <TH>#</TH>
+                <TH>Client</TH>
+                <TH>Commodity</TH>
+                <TH align="right">Pieces</TH>
+                <TH align="right">Weight kg</TH>
+                <TH>Ready</TH>
+                <TH>Status</TH>
+                <TH>CargoWise</TH>
+                <TH>Source</TH>
+                <TH>Created</TH>
+              </tr>
+            </THead>
+            <TBody>
+              {bookings.length === 0 ? (
                 <tr>
-                  <th className="px-4 py-3 font-medium">#</th>
-                  <th className="px-4 py-3 font-medium">Client</th>
-                  <th className="px-4 py-3 font-medium">Shipment</th>
-                  <th className="px-4 py-3 font-medium">Ready</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">CargoWise</th>
-                  <th className="px-4 py-3 font-medium">Source</th>
+                  <td colSpan={COLUMNS}>
+                    <EmptyState
+                      icon={<BookingIcon />}
+                      title="No bookings yet"
+                      description="Create one for a recurring client using the form."
+                    />
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {bookings.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-sm text-slate-400">
-                      No bookings yet. Create one for a recurring client on the right.
-                    </td>
-                  </tr>
-                ) : (
-                  bookings.map((b) => (
-                    <tr key={b.id} className="border-t border-slate-100 hover:bg-slate-50">
-                      <td className="px-4 py-3 font-mono text-xs text-slate-500">
-                        BK-{String(b.number).padStart(4, '0')}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-slate-800">{b.customer_name}</div>
-                        <div className="text-xs text-slate-400">
-                          {b.origin} → {b.destination}
-                          {b.flight ? (
+              ) : (
+                bookings.map((b) => {
+                  const ready = fmtDate(b.requested_date);
+                  return (
+                    <TR key={b.id}>
+                      <TD identifier>{bookingNumber(b.number)}</TD>
+                      <TD>
+                        <div className="font-medium text-ink">{b.customer_name}</div>
+                        <div className="mt-0.5 flex items-center gap-x-2 text-xs text-ink-3">
+                          <Route from={b.origin} to={b.destination} />
+                          {b.flight && (
                             <>
-                              {' · '}
-                              <span className="font-mono">{b.flight}</span>
+                              <Dot />
+                              <Id>{b.flight}</Id>
                             </>
-                          ) : null}
+                          )}
                         </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-slate-700">{b.commodity ?? '—'}</div>
-                        <div className="text-xs text-slate-400">
-                          {b.pieces != null ? `${b.pieces} pcs` : ''}
-                          {b.pieces != null && b.weight_kg != null ? ' · ' : ''}
-                          {b.weight_kg != null ? `${Number(b.weight_kg).toLocaleString('en-US')} kg` : ''}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">{fmtDate(b.requested_date)}</td>
-                      <td className="px-4 py-3">
-                        <Badge>{b.status}</Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        {b.cargowise_ref ? (
-                          <span className="font-mono text-xs text-slate-700">{b.cargowise_ref}</span>
-                        ) : (
-                          <span className="text-xs text-slate-400">Pending</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col gap-1">
-                          <Badge>{b.source.toUpperCase()}</Badge>
-                          <span className="text-[11px] text-slate-400">{fmtWhen(b.created_at)}</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                      </TD>
+                      <TD>{b.commodity ?? <Null />}</TD>
+                      <TD numeric>{b.pieces != null ? b.pieces : <Null />}</TD>
+                      <TD numeric>{b.weight_kg != null ? fmtKg(b.weight_kg) : <Null />}</TD>
+                      <TD>{ready ? <Num>{ready}</Num> : <Null />}</TD>
+                      <TD>
+                        <StatusBadge status={b.status} />
+                      </TD>
+                      <TD>{b.cargowise_ref ? <Id>{b.cargowise_ref}</Id> : <span className="text-ink-3">Pending</span>}</TD>
+                      <TD>
+                        <Tag>{statusSpec(b.source).label}</Tag>
+                      </TD>
+                      <TD className="whitespace-nowrap font-mono text-xs text-ink-3 tnum">{fmtWhen(b.created_at)}</TD>
+                    </TR>
+                  );
+                })
+              )}
+            </TBody>
+          </Table>
         </div>
 
-        <Card>
-          <div className="mb-4 text-sm font-semibold text-slate-900">New booking</div>
-          {customers.length === 0 ? (
-            <p className="text-sm text-slate-400">No recurring clients on file yet.</p>
-          ) : (
-            <BookingForm customers={customers} />
-          )}
+        {/* New booking */}
+        <Card className="self-start">
+          <CardHeader title="New booking" />
+          <CardBody>
+            {customers.length === 0 ? (
+              <EmptyState
+                size="sm"
+                icon={<UserIcon />}
+                title="No recurring clients on file"
+                description="Bookings are created for recurring clients. Once a client is marked recurring, the form appears here."
+              />
+            ) : (
+              <BookingForm customers={customers} />
+            )}
+          </CardBody>
+          <CardFooter>Confirms the booking and creates it in CargoWise through the e-adapter.</CardFooter>
         </Card>
       </div>
 
-      <Card className="mt-6">
-        <div className="mb-3 text-sm font-semibold text-slate-900">Recurring clients</div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {customers.map((c) => (
-            <div key={c.id} className="rounded-lg bg-muted px-3 py-2.5">
-              <div className="text-sm font-medium text-slate-800">{c.name}</div>
-              <div className="text-xs text-slate-500">
-                <span className="font-mono">{c.account_code}</span>
-                {c.default_commodity ? ` · ${c.default_commodity}` : ''}
-              </div>
-              {c.contact_name && (
-                <div className="mt-1 text-xs text-slate-400">
-                  {c.contact_name}
-                  {c.contact_phone ? ` · ${c.contact_phone}` : ''}
+      {/* Recurring clients */}
+      <Card className="mt-5">
+        <CardHeader title="Recurring clients" count={<Num>{customers.length}</Num>} />
+        <CardBody variant="flush">
+          {customers.length === 0 ? (
+            <EmptyState
+              size="sm"
+              icon={<UserIcon />}
+              title="No recurring clients"
+              description="Clients marked recurring can book by phone or from this page."
+            />
+          ) : (
+            // Hairline grid: 1px gaps over a line-colored backdrop so dividers stay correct when cells wrap.
+            <div className="grid gap-px overflow-hidden rounded-b-lg bg-line-subtle sm:grid-cols-2 lg:grid-cols-4">
+              {customers.map((c) => (
+                <div key={c.id} className="bg-surface px-4 py-3">
+                  <div className="text-sm font-medium text-ink">{c.name}</div>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-3">
+                    <Id>{c.account_code}</Id>
+                    {c.default_commodity && (
+                      <>
+                        <Dot />
+                        <span>{c.default_commodity}</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-ink-3">
+                    {c.contact_name ? <span>{c.contact_name}</span> : <span className="text-ink-4">No contact on file</span>}
+                    {c.contact_phone && (
+                      <>
+                        <Dot />
+                        <Num>{c.contact_phone}</Num>
+                      </>
+                    )}
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </CardBody>
       </Card>
     </div>
   );

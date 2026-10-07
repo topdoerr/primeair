@@ -1,4 +1,4 @@
-import { CheckIcon } from '@/components/icons';
+import { Tag, Timeline, TimelineStep } from '@/components/ui';
 import type { ShipmentMilestone } from '@/lib/types';
 
 function fmtWhen(iso: string | null): string {
@@ -11,67 +11,59 @@ function fmtWhen(iso: string | null): string {
   });
 }
 
-// Vertical stepper: completed (green check), in progress (pulsing blue ring),
-// pending (hollow grey). Renders all six steps in order.
+// "+2h 14m" between two completed steps; null when either timestamp is missing.
+function elapsed(fromIso: string | null, toIso: string | null): string | null {
+  if (!fromIso || !toIso) return null;
+  const ms = new Date(toIso).getTime() - new Date(fromIso).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return null;
+  const mins = Math.round(ms / 60000);
+  const d = Math.floor(mins / 1440);
+  const h = Math.floor((mins % 1440) / 60);
+  const m = mins % 60;
+  if (d > 0) return `+${d}d ${h}h`;
+  if (h > 0) return `+${h}h ${m}m`;
+  return `+${m}m`;
+}
+
+// Step labels come from the milestone catalogue; typed middle dots are not UI copy.
+function cleanLabel(label: string): string {
+  return label.replace(/\s·\s/g, ', ');
+}
+
+// Vertical stepper on the 1px rail: completed (green check), in progress (cerulean node
+// with the finite ring pulse), pending (hollow). Renders all six steps in order.
 export function MilestoneTimeline({ milestones }: { milestones: ShipmentMilestone[] }) {
   return (
-    <ol className="relative">
+    <Timeline>
       {milestones.map((m, i) => {
         const last = i === milestones.length - 1;
         const completed = m.status === 'COMPLETED';
         const active = m.status === 'IN_PROGRESS';
+        const state = completed ? 'completed' : active ? 'active' : 'pending';
+        const prev = i > 0 ? milestones[i - 1] : null;
+        const since =
+          completed && prev && prev.status === 'COMPLETED' ? elapsed(prev.occurred_at, m.occurred_at) : null;
+        const showNote = Boolean(m.notes) || (completed && Boolean(m.source));
         return (
-          <li key={m.code} className="relative flex gap-4 pb-6 last:pb-0">
-            {!last && (
-              <span
-                className={`absolute left-[11px] top-6 h-[calc(100%-0.5rem)] w-0.5 ${
-                  completed ? 'bg-accent-400' : 'bg-slate-200'
-                }`}
-                aria-hidden
-              />
-            )}
-            <span
-              className={`relative z-10 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ring-4 ring-white ${
-                completed
-                  ? 'bg-accent-500 text-white'
-                  : active
-                    ? 'bg-brand-500 text-white'
-                    : 'border-2 border-slate-300 bg-white'
-              }`}
-            >
-              {completed && <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.5} />}
-              {active && (
-                <span className="absolute inset-0 animate-ping rounded-full bg-brand-400 opacity-60" />
-              )}
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                <div
-                  className={`text-sm font-medium ${
-                    completed || active ? 'text-slate-900' : 'text-slate-400'
-                  }`}
-                >
-                  {m.label}
-                </div>
-                <div className="text-xs text-slate-400">
-                  {completed
-                    ? fmtWhen(m.occurred_at)
-                    : active
-                      ? 'In progress'
-                      : 'Pending'}
-                </div>
-              </div>
-              {(m.notes || (completed && m.source)) && (
-                <div className="mt-0.5 text-xs text-slate-500">
-                  {m.notes}
-                  {m.notes && completed && m.source ? ' · ' : ''}
-                  {completed && m.source ? `via ${m.source}` : ''}
-                </div>
-              )}
-            </div>
-          </li>
+          <TimelineStep
+            key={m.code}
+            index={i + 1}
+            state={state}
+            last={last}
+            title={cleanLabel(m.label)}
+            time={completed ? fmtWhen(m.occurred_at) : active ? 'In progress' : 'Expected'}
+            note={
+              showNote ? (
+                <>
+                  {m.notes && <span>{m.notes}</span>}
+                  {completed && m.source && <Tag size="sm">via {m.source}</Tag>}
+                </>
+              ) : undefined
+            }
+            meta={since ?? undefined}
+          />
         );
       })}
-    </ol>
+    </Timeline>
   );
 }

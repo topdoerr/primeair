@@ -10,20 +10,20 @@ export default function DesignPreviewIndex() {
 
   return (
     <div className="mx-auto max-w-3xl px-8 py-10">
-      <h1 className="text-2xl font-semibold text-slate-900">Design preview</h1>
-      <p className="mt-2 text-sm text-slate-600">
+      <h1 className="text-2xl font-medium text-ink">Design preview</h1>
+      <p className="mt-2 text-sm text-ink-3">
         Every View rendered with fixture data from <code>src/lib/fixtures.ts</code>. Dev only; this
         route 404s in production.
       </p>
-      <ul className="mt-8 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+      <ul className="mt-8 divide-y divide-line rounded-lg border border-line bg-surface">
         {PREVIEW_SCREENS.map((s) => (
           <li key={s.key}>
             <Link
               href={`/design-preview/${s.key}`}
-              className="flex items-center justify-between px-4 py-3 text-sm hover:bg-slate-50"
+              className="flex items-center justify-between px-4 py-3 text-sm hover:bg-canvas"
             >
-              <span className="text-slate-900">{s.label}</span>
-              <code className="text-xs text-slate-500">/design-preview/{s.key}</code>
+              <span className="text-ink">{s.label}</span>
+              <code className="font-mono text-xs text-ink-3">/design-preview/{s.key}</code>
             </Link>
           </li>
         ))}

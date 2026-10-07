@@ -1,5 +1,9 @@
 'use client';
 
+import { useId, type CSSProperties } from 'react';
+import { BrandLockup, Button, Field, InlineNotice, Input } from '@/components/ui';
+import { ArrowRightIcon, OndaMark } from '@/components/icons';
+
 export type LoginViewProps = {
   email: string;
   password: string;
@@ -10,6 +14,11 @@ export type LoginViewProps = {
   onSubmit: (e: React.FormEvent) => void;
 };
 
+// The hero is #0a0e14 (spec 4.4), slightly deeper than the graphite rail. The brand
+// mark knocks its arrow out with `--sidebar-bg`, so the token is re-pointed here to
+// keep the knockout invisible against the hero surface.
+const HERO_TOKENS = { '--sidebar-bg': '10 14 20' } as CSSProperties;
+
 export function LoginView({
   email,
   password,
@@ -19,76 +28,99 @@ export function LoginView({
   onPasswordChange,
   onSubmit,
 }: LoginViewProps) {
+  const emailId = useId();
+  const passwordId = useId();
+
   return (
-    <div className="flex min-h-screen">
-      {/* Hero image panel (large screens only). */}
-      <div className="relative hidden w-1/2 bg-brand-900 lg:block">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="https://golvuayo9mmzga7x.public.blob.vercel-storage.com/ChatGPT%20Image%20Jul%2022%2C%202026%2C%2004_26_30%20PM.png"
-          alt="Prime Global Logistics"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div
-          className="absolute inset-0 bg-gradient-to-t from-brand-900/80 via-transparent to-transparent"
-          aria-hidden
-        />
-        <div className="absolute bottom-10 left-10 right-10">
-          <p className="text-2xl font-semibold leading-snug text-white text-balance">
+    <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
+      {/* Hero: ink surface with the hairline grid. No network dependency. */}
+      <section
+        aria-label="Prime Air"
+        style={HERO_TOKENS}
+        className="login-hero relative hidden flex-col justify-between overflow-hidden p-12 text-white lg:flex"
+      >
+        <BrandLockup size="lg" inverse href={null} />
+
+        <div>
+          {/* Route diagram: the second and last use of the dashed route motif. */}
+          <div className="relative mt-16 flex items-center gap-6 font-mono" aria-label="Route Miami to San Juan">
+            <div>
+              <div className="text-4xl tracking-[-0.025em]">MIA</div>
+              <div className="mt-1 font-sans text-xs text-white/50">Miami</div>
+            </div>
+            <div className="relative h-px flex-1 border-t border-dashed border-white/25" aria-hidden>
+              <span className="absolute left-[60%] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-white" />
+              <ArrowRightIcon className="absolute -right-1 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-accent-500" />
+            </div>
+            <div>
+              <div className="text-4xl tracking-[-0.025em]">SJU</div>
+              <div className="mt-1 font-sans text-xs text-white/50">San Juan</div>
+            </div>
+          </div>
+
+          <p className="mt-10 max-w-[36ch] text-xl font-semibold tracking-[-0.015em] text-balance">
             Air cargo operations, answered on the first ring.
           </p>
-          <p className="mt-2 text-sm text-white/70">
-            AWB status, pickups, and discrepancies — MIA to SJU.
+          <p className="mt-3 max-w-[44ch] text-base text-white/60 text-pretty">
+            AWB status, pickups and discrepancies for the Miami to San Juan lane.
           </p>
         </div>
-      </div>
 
-      {/* Sign-in panel. */}
-      <div className="flex w-full items-center justify-center bg-background px-4 lg:w-1/2">
-        <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_rgba(15,23,42,0.08)]">
-          <div className="mb-8">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://primeaircorp.com/wp-content/uploads/2025/03/Prime-Global-Logistics-Logo-e1753980018767.png"
-              alt="Prime Air Corp"
-              className="mb-4 h-11 w-auto"
-            />
-            <h1 className="text-lg font-semibold tracking-tight text-slate-900">Welcome back</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Sign in to the cargo operations dashboard
-            </p>
-          </div>
-          <form onSubmit={onSubmit} className="space-y-4">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
-              <input
+        <div className="flex items-center gap-1.5 text-xs text-white/50">
+          <span>Powered by</span>
+          <OndaMark size={12} className="h-3 w-3 text-white/70" />
+          <span className="font-semibold tracking-[-0.01em] text-white/80">Onda</span>
+        </div>
+      </section>
+
+      {/* Sign-in: a card-less form on the canvas. */}
+      <div className="flex items-center justify-center bg-canvas px-6 py-12">
+        <div className="w-full max-w-[360px]">
+          <BrandLockup size="sm" href={null} className="mb-8 lg:hidden" />
+
+          <h1 className="text-xl font-semibold tracking-[-0.015em] text-ink">Sign in</h1>
+          <p className="mt-1 text-base text-ink-3">Cargo operations dashboard</p>
+
+          <form onSubmit={onSubmit} className="mt-8 space-y-4">
+            <Field label="Email" htmlFor={emailId}>
+              <Input
+                id={emailId}
+                size="xl"
                 type="email"
+                name="email"
+                autoComplete="email"
                 required
                 value={email}
                 onChange={(e) => onEmailChange(e.target.value)}
-                className="w-full rounded-lg border border-border bg-white px-3.5 py-2.5 text-sm transition-shadow focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                placeholder="ops@primeair.example"
+                placeholder="you@primeair.example"
               />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Password</label>
-              <input
+            </Field>
+
+            <Field label="Password" htmlFor={passwordId}>
+              <Input
+                id={passwordId}
+                size="xl"
                 type="password"
+                name="password"
+                autoComplete="current-password"
                 required
                 value={password}
                 onChange={(e) => onPasswordChange(e.target.value)}
-                className="w-full rounded-lg border border-border bg-white px-3.5 py-2.5 text-sm transition-shadow focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
               />
-            </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 disabled:opacity-60"
-            >
-              {loading ? 'Signing in…' : 'Sign in'}
-            </button>
+            </Field>
+
+            {error && (
+              <InlineNotice tone="danger" className="w-full">
+                {error}
+              </InlineNotice>
+            )}
+
+            <Button type="submit" variant="primary" size="lg" className="h-10 w-full text-base" busy={loading}>
+              {loading ? 'Signing in' : 'Sign in'}
+            </Button>
           </form>
+
+          <p className="mt-6 text-xs text-ink-3">Access is provisioned by Prime Air operations.</p>
         </div>
       </div>
     </div>

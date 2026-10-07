@@ -1,4 +1,18 @@
-import { PageHeader, Card } from '@/components/ui';
+import {
+  Card,
+  CardBody,
+  CardFooter,
+  CardHeader,
+  EmptyState,
+  Id,
+  InlineNotice,
+  Kbd,
+  KeyValue,
+  Num,
+  PageHeader,
+  Tag,
+} from '@/components/ui';
+import { AlertIcon } from '@/components/icons';
 import { AssistantEditor } from '@/components/AssistantEditor';
 // Type-only import: erased at compile time, so the `server-only` guard in
 // @/lib/vapi never executes when this View is rendered without a backend.
@@ -15,6 +29,8 @@ export type AssistantViewProps = {
   error: string | null;
 };
 
+const SUBTITLE = 'Live Vapi configuration for the voice agent; edits push back through the Vapi MCP server.';
+
 function extractSystemPrompt(a: VapiAssistant | null): string {
   const messages = a?.model?.messages ?? [];
   const sys = messages.find((m) => m.role === 'system');
@@ -25,73 +41,117 @@ export function AssistantView({ configured, assistant, phone, error }: Assistant
   if (!configured) {
     return (
       <div>
-        <PageHeader title="Assistant" subtitle="Prime Air AWB Status voice agent" />
+        <PageHeader title="Assistant" subtitle={SUBTITLE} />
         <Card>
-          <p className="text-sm text-slate-600">
-            Vapi is not configured. Set <code className="font-mono">VAPI_API_KEY</code> in your
-            environment, then run{' '}
-            <code className="font-mono">npm run vapi:provision</code> to create the assistant.
-          </p>
+          <EmptyState
+            icon={<AlertIcon />}
+            title="Vapi is not configured"
+            description={
+              <>
+                Set <Kbd>VAPI_API_KEY</Kbd> in the environment, then run <Kbd>npm run vapi:provision</Kbd> to create
+                the assistant.
+              </>
+            }
+          />
         </Card>
       </div>
     );
   }
 
+  const provider = assistant?.model?.provider;
+  const model = assistant?.model?.model;
+
   return (
     <div>
-      <PageHeader
-        title="Assistant"
-        subtitle="Read the live Vapi config and push edits back through the Vapi MCP server"
-      />
+      <PageHeader title="Assistant" subtitle={SUBTITLE} />
 
       {error && (
-        <Card className="mb-6">
-          <p className="text-sm text-red-600">Could not reach Vapi: {error}</p>
+        <Card className="mb-5">
+          <EmptyState
+            icon={<AlertIcon />}
+            title="Could not reach Vapi"
+            description="The assistant configuration could not be loaded. Check the API key and try again."
+            action={
+              <InlineNotice tone="danger" className="max-w-[60ch] text-left">
+                {error}
+              </InlineNotice>
+            }
+          />
         </Card>
       )}
 
       {!error && !assistant && (
-        <Card className="mb-6">
-          <p className="text-sm text-slate-600">
-            No assistant found. Run <code className="font-mono">npm run vapi:provision</code> to
-            create “Prime Air AWB Status”.
-          </p>
+        <Card className="mb-5">
+          <EmptyState
+            icon={<AlertIcon />}
+            title="No assistant found"
+            description={
+              <>
+                Run <Kbd>npm run vapi:provision</Kbd> to create the Prime Air AWB Status assistant.
+              </>
+            }
+          />
         </Card>
       )}
 
       {assistant && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-1">
-            <div className="text-sm font-semibold text-slate-900">{assistant.name}</div>
-            <dl className="mt-4 space-y-3 text-sm">
-              <div>
-                <dt className="text-xs uppercase text-slate-400">Assistant ID</dt>
-                <dd className="mt-0.5 break-all font-mono text-xs text-slate-600">
-                  {assistant.id}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase text-slate-400">Phone number</dt>
-                <dd className="mt-0.5 font-mono text-slate-700">
-                  {phone?.number ?? 'None attached'}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase text-slate-400">Model</dt>
-                <dd className="mt-0.5 text-slate-700">
-                  {assistant.model?.provider ?? '—'} / {assistant.model?.model ?? '—'}
-                </dd>
-              </div>
-            </dl>
-          </Card>
+        <div className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <div className="min-w-0">
+            <Card>
+              <CardHeader
+                title={assistant.name ?? 'Assistant'}
+                actions={
+                  <span className="inline-flex items-center gap-1.5 text-2xs text-ink-3">
+                    <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-ok-dot" />
+                    Live
+                  </span>
+                }
+              />
+              <CardBody>
+                <KeyValue
+                  rows={[
+                    {
+                      key: 'id',
+                      label: 'Assistant ID',
+                      value: <Id className="block whitespace-normal break-all text-xs">{assistant.id}</Id>,
+                    },
+                    {
+                      key: 'phone',
+                      label: 'Phone number',
+                      value: phone?.number ? (
+                        <Num className="text-ink">{phone.number}</Num>
+                      ) : (
+                        <span className="text-ink-3">None attached</span>
+                      ),
+                    },
+                    {
+                      key: 'model',
+                      label: 'Model',
+                      value: (
+                        <span className="flex min-w-0 items-center gap-2">
+                          {provider ? <Tag className="shrink-0">{provider}</Tag> : <Tag muted>Unspecified</Tag>}
+                          {model ? (
+                            <Id className="min-w-0 truncate text-xs">{model}</Id>
+                          ) : (
+                            <span className="text-ink-3">Unspecified</span>
+                          )}
+                        </span>
+                      ),
+                    },
+                  ]}
+                />
+              </CardBody>
+              <CardFooter>Read from Vapi on every page load.</CardFooter>
+            </Card>
+          </div>
 
-          <Card className="lg:col-span-2">
+          <div className="min-w-0">
             <AssistantEditor
               assistantId={assistant.id}
               initialFirstMessage={assistant.firstMessage ?? ''}
               initialSystemPrompt={extractSystemPrompt(assistant)}
             />
-          </Card>
+          </div>
         </div>
       )}
     </div>
