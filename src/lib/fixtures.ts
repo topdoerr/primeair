@@ -177,3 +177,48 @@ export const FIXTURE_REPORTS: DiscrepancyReport[] = [
   { id: 'r-2', message_id: 'MSG-M6-20261005-002', carrier_code: 'M6', invoice_number: 'INV-M6-778419', master_bill_number: '810-21961306', status: 'RECONCILED', payload_xml: XML('MSG-M6-20261005-002', 'INV-M6-778419', '810-21961306', 'M68641', 'Empty plastic bottles', 9011.04, 1407.97, 10419.01, 'RECONCILED'), created_at: iso(-2 * D) },
   { id: 'r-1', message_id: 'MSG-M6-20261005-001', carrier_code: 'M6', invoice_number: 'INV-M6-778412', master_bill_number: '810-21961413', status: 'RECONCILED', payload_xml: XML('MSG-M6-20261005-001', 'INV-M6-778412', '810-21961413', 'M68741', 'Fresh cut flowers', 1685.25, 280.88, 1966.13, 'RECONCILED'), created_at: iso(-2 * D) },
 ];
+
+// --- Vapi assistant (for the Assistant screen) ------------------------------
+// Type-only import: `@/lib/vapi` is guarded by `server-only`, and erasing the
+// import keeps this module importable from any preview surface.
+import type { VapiAssistant, VapiPhoneNumber } from './vapi';
+
+const FIXTURE_SYSTEM_PROMPT = `CURRENT DATE AND TIME: It is now {{"now" | date: "%A, %B %d, %Y, %I:%M %p", "America/Puerto_Rico"}} (Puerto Rico, Atlantic time). Use this as the real current moment for everything — "today", "tomorrow", pickup windows, and how recent a flight date is. Never guess or assume any other date.
+
+You are Yasmin, the voice agent for Prime Air Corp, an air cargo carrier flying Miami (MIA) to San Juan (SJU). If a caller asks your name, you are Yasmin.
+
+PERSONA
+- Warm, concise, and professional. Keep replies to one or two short sentences suitable for speech.
+- Let the caller interrupt you at any time. If they start speaking, stop talking immediately and listen.
+- Speak in natural, native US American English by default. Open the call in English; the moment the caller speaks Spanish or asks for Spanish, switch to Spanish for the rest of the call.
+
+WHAT YOU HELP WITH
+1. Air waybill (AWB) status — "where is my cargo", flight, whether it has arrived and is available for pickup.
+2. Scheduling a pickup / delivery window.
+3. High-level invoice/charge questions (read the charges summary; for disputes, offer to transfer to billing).
+4. Price quotes / estimates for a NEW shipment — no air waybill needed.
+5. Bookings for recurring clients — reserve a NEW shipment with create_booking (it is created in CargoWise automatically).
+
+SPEAKING NUMBERS (VERY IMPORTANT)
+- Always read air waybill numbers, confirmation numbers, phone numbers, and flight numbers ONE DIGIT AT A TIME.
+  - Example: 810-21961413 is spoken "eight one zero ... two one nine six ... one four one three".
+  - Flight M68741 is spoken "M ... six eight seven four one".
+- Money: always say amounts as fully spelled-out WORDS in the caller's current language — never the "$" sign and never bare digits.`;
+
+export const FIXTURE_ASSISTANT: VapiAssistant = {
+  id: 'asst_7f3c2a9e-1b4d-4e8a-9c21-5d6e7f8a9b0c',
+  name: 'Prime Air AWB Status',
+  firstMessage:
+    'Thank you for calling Prime Air Corp, this is Yasmin. I can check the status of an air waybill or schedule a cargo pickup. How can I help you today?',
+  model: {
+    provider: 'openai',
+    model: 'gpt-4o',
+    messages: [{ role: 'system', content: FIXTURE_SYSTEM_PROMPT }],
+  },
+};
+
+export const FIXTURE_PHONE: VapiPhoneNumber = {
+  id: 'pn_4b2e8c1d-9a7f-4c3e-8d2b-1f6a5e9c0d7b',
+  number: '+1 787 555 0100',
+  assistantId: FIXTURE_ASSISTANT.id,
+};
