@@ -8,8 +8,18 @@ import { ChevronRightIcon } from '@/components/icons';
 
 // Slim chrome above the operating panel: breadcrumb, static integration label,
 // route strip and avatar in rail mode. `children` is a centered slot for a future palette.
-export function TopBar({ userEmail, children }: { userEmail?: string | null; children?: ReactNode }) {
-  const pathname = usePathname();
+export function TopBar({
+  userEmail,
+  pathname: pathnameOverride,
+  children,
+}: {
+  userEmail?: string | null;
+  /** Route for the breadcrumb; defaults to the live pathname (dev preview passes the mirrored route). */
+  pathname?: string;
+  children?: ReactNode;
+}) {
+  const livePathname = usePathname();
+  const pathname = pathnameOverride ?? livePathname;
   const crumbs = findCrumb(pathname) ?? ['Prime Air'];
 
   return (

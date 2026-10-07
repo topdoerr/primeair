@@ -55,6 +55,16 @@ function cleanLabel(label: string): string {
 
 const TOTAL_STEPS = MILESTONE_STEPS.length;
 
+/*
+  CargoWise sync card: at xl the right column is ~324px, so the KeyValue 120px label
+  column leaves ~160px for a badge, a CW ref or a timestamp, which clipped them. The
+  dl becomes a size container and, whenever it measures under 320px, each row drops
+  to the KeyValue columns=2 treatment (dt text-xs text-ink-3 over dd text-sm text-ink,
+  no label column). Below xl the card spans the page and the 120px layout returns.
+*/
+const SYNC_STACK_WHEN_NARROW =
+  '[container-type:inline-size] [@container_(max-width:320px)]:[&>div]:grid-cols-1 [@container_(max-width:320px)]:[&>div]:gap-y-0.5 [@container_(max-width:320px)]:[&_dt]:text-xs';
+
 export type Tracked = {
   awb: AirWaybill;
   timeline: ShipmentMilestone[];
@@ -168,18 +178,19 @@ function TrackedTable({ rows, flight }: { rows: Tracked[]; flight: string | null
       </Toolbar>
 
       <Table
-        minWidth={880}
+        minWidth={960}
         footer="Open a shipment for the full timeline, portal pull and CargoWise push. Searching a flight lists every shipment on it."
       >
         <THead>
+          {/* Fixed-content columns carry a width so auto layout hands the slack to Commodity and Current milestone. */}
           <tr>
-            <TH>AWB</TH>
-            <TH>Flight</TH>
+            <TH className="w-[120px]">AWB</TH>
+            <TH className="w-[80px]">Flight</TH>
             <TH>Commodity</TH>
             <TH>Current milestone</TH>
-            <TH>Progress</TH>
-            <TH>CargoWise</TH>
-            <TH>Status</TH>
+            <TH className="w-[140px]">Progress</TH>
+            <TH className="w-[150px]">CargoWise</TH>
+            <TH className="w-[1%]">Status</TH>
           </tr>
         </THead>
         <TBody>
@@ -198,37 +209,58 @@ function TrackedTable({ rows, flight }: { rows: Tracked[]; flight: string | null
               const href = `/tracking?q=${encodeURIComponent(awb.master_bill_number)}`;
               return (
                 <TR key={awb.id} href={href}>
-                  <TD identifier>
+                  <TD identifier className="whitespace-nowrap">
                     <RowLink href={href}>{awb.master_bill_number}</RowLink>
                   </TD>
-                  <TD mono muted>
+                  <TD mono muted className="whitespace-nowrap">
                     {awb.flight ?? <Null />}
                   </TD>
-                  <TD>{awb.commodity ?? <Null />}</TD>
-                  <TD>
+                  <TD className="max-w-[20ch]">
+                    {awb.commodity ? (
+                      <span className="block truncate" title={awb.commodity}>
+                        {awb.commodity}
+                      </span>
+                    ) : (
+                      <Null />
+                    )}
+                  </TD>
+                  <TD className="max-w-[30ch]">
                     {current ? (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 whitespace-nowrap">
                         <StatusBadge status={current.status} />
-                        <span className="text-ink-2">{cleanLabel(current.label)}</span>
+                        <span className="min-w-0 truncate text-ink-2" title={cleanLabel(current.label)}>
+                          {cleanLabel(current.label)}
+                        </span>
                       </div>
                     ) : (
                       <span className="text-ink-3">Not started</span>
                     )}
                   </TD>
-                  <TD>
+                  <TD className="whitespace-nowrap">
                     <Segments done={done} total={TOTAL_STEPS} current={current?.status === 'IN_PROGRESS'} />
                   </TD>
-                  <TD>
+                  <TD className="whitespace-nowrap">
                     {lastPush ? (
                       <div>
-                        <div>{lastPush.external_ref ? <Id>{lastPush.external_ref}</Id> : <Null />}</div>
-                        <div className="mt-0.5 font-mono text-xs text-ink-3 tnum">{fmtWhen(lastPush.created_at)}</div>
+                        {/* Two-line cell: ref and timestamp are single tokens, never split.
+                            A push without a ref shows its status (Pending, Failed), never a Null: the en dash
+                            stands only for absent data, and "Not pushed" only for the no-event case. */}
+                        <div>
+                          {lastPush.external_ref ? (
+                            <Id className="whitespace-nowrap">{lastPush.external_ref}</Id>
+                          ) : (
+                            <StatusBadge size="sm" status={lastPush.status} />
+                          )}
+                        </div>
+                        <div className="mt-0.5 whitespace-nowrap font-mono text-xs text-ink-3 tnum">
+                          {fmtWhen(lastPush.created_at)}
+                        </div>
                       </div>
                     ) : (
                       <span className="text-ink-3">Not pushed</span>
                     )}
                   </TD>
-                  <TD>
+                  <TD className="whitespace-nowrap">
                     <StatusBadge status={awb.status} />
                   </TD>
                 </TR>
@@ -253,9 +285,9 @@ function ShipmentDetail({ t, events }: { t: Tracked; events: IntegrationEvent[] 
         {
           key: 'ref',
           label: 'Reference',
-          value: lastPush.external_ref ? <Id>{lastPush.external_ref}</Id> : <Null />,
+          value: lastPush.external_ref ? <Id className="whitespace-nowrap">{lastPush.external_ref}</Id> : <Null />,
         },
-        { key: 'when', label: 'Last push', value: <Num>{fmtWhen(lastPush.created_at)}</Num> },
+        { key: 'when', label: 'Last push', value: <Num className="whitespace-nowrap">{fmtWhen(lastPush.created_at)}</Num> },
         { key: 'via', label: 'Via', value: lastPush.system },
         {
           key: 'pushed',
@@ -302,7 +334,7 @@ function ShipmentDetail({ t, events }: { t: Tracked; events: IntegrationEvent[] 
         action={<TrackingActions masterBillNumber={awb.master_bill_number} />}
       />
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <Card>
           <CardHeader
             title="Milestones"
@@ -322,7 +354,7 @@ function ShipmentDetail({ t, events }: { t: Tracked; events: IntegrationEvent[] 
             <CardHeader title="CargoWise sync" />
             <CardBody>
               {syncRows ? (
-                <KeyValue rows={syncRows} />
+                <KeyValue rows={syncRows} className={SYNC_STACK_WHEN_NARROW} />
               ) : (
                 <EmptyState
                   size="sm"
@@ -357,15 +389,15 @@ function ShipmentDetail({ t, events }: { t: Tracked; events: IntegrationEvent[] 
                         </span>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm text-ink">{pull ? 'Portal pull' : 'CargoWise push'}</span>
+                            <span className="whitespace-nowrap text-sm text-ink">{pull ? 'Portal pull' : 'CargoWise push'}</span>
                             <StatusBadge status={e.status} size="sm" />
                           </div>
                           <div className="mt-0.5 flex flex-wrap items-center gap-x-2 font-mono text-xs text-ink-3 tnum">
-                            <span>{fmtWhen(e.created_at)}</span>
+                            <span className="whitespace-nowrap">{fmtWhen(e.created_at)}</span>
                             {e.external_ref && (
                               <>
                                 <Dot />
-                                <Id>{e.external_ref}</Id>
+                                <Id className="whitespace-nowrap">{e.external_ref}</Id>
                               </>
                             )}
                           </div>

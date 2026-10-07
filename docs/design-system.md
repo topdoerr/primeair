@@ -585,7 +585,7 @@ Placeholders are hints ("e.g. 4"), never bare example values. Labels are sentenc
 
 ```
 Table     <div className="overflow-x-auto rounded-lg border border-line bg-surface scroll-stable"><table className="w-full border-collapse text-sm" style={{minWidth}}>
-          minWidth per page: Overview snapshot none, Discrepancies 760, Calls 800, Tracking 880, Tickets 880, Bookings 920
+          minWidth per page: Overview snapshot none, Discrepancies 760, Calls 800, Tracking 960, Tickets 880, Bookings 920
 THead     bg-surface-sunken
 Th        h-9 whitespace-nowrap border-b border-line px-3 text-left text-xs font-medium text-ink-3 first:pl-4 last:pr-4   | align="right": text-right
 TBody     (no class)
@@ -723,7 +723,7 @@ Common to every page: subtitles are sentence-case product copy without arrows or
 
 - PageHeader "Milestone tracking"; subtitle "Flight or air waybill milestones from the cargo portal, synced to CargoWise through the e-adapter."; action slot = the GET form: Input md mono with SearchIcon `w-[320px]` placeholder "AWB 810-21961413 or flight M68741" `aria-label="Track a shipment"`, Button primary md "Track", and `LinkButton ghost md href=/tracking` "Clear" when `q`.
 - Toolbar: `<Num>{n}</Num> tracked shipments` or `Flight <Id>M68741</Id>` / `<Num>{n}</Num> shipments`.
-- Table (min 880): AWB (identifier, row href to detail), Flight (mono muted), Commodity, Current milestone (StatusBadge + label), Progress (Segments), CargoWise (two-line `<Id>` ref over `font-mono text-xs text-ink-3 tnum` time, else `text-ink-3` "Not pushed"), Status (StatusBadge). CardFooter on the wrapper: "Open a shipment for the full timeline, portal pull and CargoWise push. Searching a flight lists every shipment on it."
+- Table (min 960): AWB (identifier, row href to detail), Flight (mono muted), Commodity, Current milestone (StatusBadge + label), Progress (Segments), CargoWise (two-line `<Id>` ref over `font-mono text-xs text-ink-3 tnum` time, else `text-ink-3` "Not pushed"), Status (StatusBadge). CardFooter on the wrapper: "Open a shipment for the full timeline, portal pull and CargoWise push. Searching a flight lists every shipment on it."
 - Empty: EmptyState PackageIcon "No shipments tracked yet" / "Search an air waybill or flight number to start tracking." Not-found: EmptyState SearchIcon `Nothing tracked for <Id>{q}</Id>` / "Try an air waybill such as 810-21961413 or a flight such as M68741." action secondary sm "Clear search".
 
 ### 7.3 Milestone tracking detail (same route, one AWB)

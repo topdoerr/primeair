@@ -1,4 +1,5 @@
 import {
+  Dot,
   EmptyState,
   Id,
   IntentBadge,
@@ -28,6 +29,29 @@ function fmtDate(iso: string): string {
 
 function ticketRef(n: number): string {
   return `PA-${String(n).padStart(4, '0')}`;
+}
+
+/** An air waybill as it appears in a ticket subject: "810-21961500" or "81021961500". */
+const AWB_TAIL_RE = /^\d{3}-?\d{8}$/;
+
+/**
+ * Presentational split of a subject such as "Invoice/charges question — 810-21961500":
+ * the text before the typed dash is the primary line; the tail is rendered after a dot
+ * separator, as <Id> when it is an AWB. The stored subject is untouched.
+ */
+function SubjectLine({ subject }: { subject: string }) {
+  const sep = subject.indexOf(' — ');
+  if (sep === -1) return <>{subject}</>;
+  const head = subject.slice(0, sep).trim();
+  const tail = subject.slice(sep + 3).trim();
+  if (!tail) return <>{head}</>;
+  return (
+    <span className="inline-flex flex-wrap items-center gap-x-2">
+      <span>{head}</span>
+      <Dot />
+      {AWB_TAIL_RE.test(tail) ? <Id className="font-normal">{tail}</Id> : <span className="font-normal text-ink-2">{tail}</span>}
+    </span>
+  );
 }
 
 export type TicketsViewProps = {
@@ -93,7 +117,9 @@ export function TicketsView({ tickets }: TicketsViewProps) {
                   {ticketRef(t.number)}
                 </TD>
                 <TD>
-                  <div className="font-medium text-ink">{t.subject}</div>
+                  <div className="font-medium text-ink">
+                    <SubjectLine subject={t.subject} />
+                  </div>
                   {t.description && (
                     <div className="mt-0.5 line-clamp-1 max-w-[48ch] text-xs text-ink-3">{t.description}</div>
                   )}
@@ -101,9 +127,11 @@ export function TicketsView({ tickets }: TicketsViewProps) {
                 <TD>
                   <IntentBadge intent={t.category} />
                 </TD>
-                <TD>
+                <TD className="whitespace-nowrap">
                   {t.master_bill_number ? (
-                    <Id href={`/awb?q=${encodeURIComponent(t.master_bill_number)}`}>{t.master_bill_number}</Id>
+                    <Id href={`/awb?q=${encodeURIComponent(t.master_bill_number)}`} className="whitespace-nowrap">
+                      {t.master_bill_number}
+                    </Id>
                   ) : (
                     <Null />
                   )}
@@ -114,7 +142,7 @@ export function TicketsView({ tickets }: TicketsViewProps) {
                 <TD>
                   <StatusBadge status={t.status} />
                 </TD>
-                <TD>
+                <TD className="whitespace-nowrap">
                   <span className="whitespace-nowrap font-mono text-xs text-ink-3 tnum">{fmtDate(t.created_at)}</span>
                 </TD>
               </TR>

@@ -54,7 +54,12 @@ export function DiscrepancyDetailView({ report, parsed }: DiscrepancyDetailViewP
             Discrepancies
           </Link>
         }
-        title={<Id className="text-2xl font-medium">{report.message_id}</Id>}
+        title={
+          <span className="flex items-center gap-3">
+            <Id className="text-2xl font-medium">{report.message_id}</Id>
+            <StatusBadge status={report.status} />
+          </span>
+        }
         meta={
           <>
             <span>
@@ -70,7 +75,6 @@ export function DiscrepancyDetailView({ report, parsed }: DiscrepancyDetailViewP
             )}
           </>
         }
-        action={<StatusBadge status={report.status} />}
       />
 
       <div className="grid gap-5 lg:grid-cols-2">

@@ -523,15 +523,28 @@ const INTENT_LABELS: Record<string, string> = {
   other: 'Other',
 };
 
-export function IntentBadge({ intent, size }: { intent: string | null; size?: 'sm' | 'md' }) {
+export function IntentBadge({
+  intent,
+  size,
+  className,
+}: {
+  intent: string | null;
+  size?: 'sm' | 'md';
+  /** Passed through to the Tag, e.g. `max-w-full truncate` inside a narrow cell. */
+  className?: string;
+}) {
   if (!intent) {
     return (
-      <Tag size={size} muted>
+      <Tag size={size} muted className={className}>
         Unspecified
       </Tag>
     );
   }
-  return <Tag size={size}>{INTENT_LABELS[intent] ?? intent}</Tag>;
+  return (
+    <Tag size={size} className={className}>
+      {INTENT_LABELS[intent] ?? intent}
+    </Tag>
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -544,8 +557,19 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 const BUTTON_BASE =
   'inline-flex select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-md font-medium transition-[background-color,border-color,color,box-shadow] duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50 aria-busy:cursor-progress';
 
+/*
+  Disabled primary: a quiet neutral slab (surface-active + ink-4, no shadow, full
+  opacity) instead of a 50% cerulean one, which reads as a broken primary rather
+  than an idle one. The guard `:disabled:not([aria-busy])` keeps the busy state
+  cerulean: Button sets `disabled` while loading, and "Pushing" must still look
+  like a primary in progress (base 50% opacity + Spinner). Secondary / ghost /
+  danger keep the base `disabled:opacity-50`.
+*/
+const PRIMARY_DISABLED =
+  '[&:disabled:not([aria-busy])]:bg-surface-active [&:disabled:not([aria-busy])]:text-ink-4 [&:disabled:not([aria-busy])]:shadow-none [&:disabled:not([aria-busy])]:opacity-100';
+
 const BUTTON_VARIANT: Record<ButtonVariant, string> = {
-  primary: 'bg-brand-600 text-ink-inverse shadow-primary hover:bg-brand-700 active:bg-brand-800',
+  primary: cn('bg-brand-600 text-ink-inverse shadow-primary hover:bg-brand-700 active:bg-brand-800', PRIMARY_DISABLED),
   secondary:
     'border border-line-strong bg-surface text-ink-2 shadow-control hover:bg-surface-hover hover:text-ink active:bg-surface-active',
   ghost: 'text-ink-2 hover:bg-surface-hover hover:text-ink active:bg-surface-active',
@@ -784,27 +808,48 @@ export function Textarea({
 /* Tables                                                              */
 /* ------------------------------------------------------------------ */
 
+/*
+  Right-edge fade for tables that are wider than their column: a 24px surface-to-
+  transparent veil over the scroller's right edge so a clipped header reads as
+  "more to the right", not as a broken layout. It lives on a non-scrolling
+  wrapper (an ::after inside the overflow-x-auto element would scroll away with
+  the content) and sits above the scroller, below the footer, so the footer text
+  is never veiled.
+*/
+const EDGE_FADE =
+  'after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-6 after:rounded-r-[inherit] after:bg-gradient-to-l after:from-surface after:content-[""]';
+
 export function Table({
   children,
   className,
   minWidth,
   wrapperClassName,
   footer,
+  edgeFade = false,
   ...rest
 }: TableHTMLAttributes<HTMLTableElement> & {
-  /** Per page: Discrepancies 760, Calls 800, Tracking 880, Tickets 880, Bookings 920. */
+  /** Per page: Discrepancies 760, Calls 800, Tracking 960, Tickets 880, Bookings 920. */
   minWidth?: number;
   wrapperClassName?: string;
   /** Optional CardFooter-style note under the table. */
   footer?: ReactNode;
+  /** Opt-in right-edge fade for a table that scrolls horizontally at its primary breakpoint. */
+  edgeFade?: boolean;
 }) {
+  const scroller = (
+    <div className={cn('overflow-x-auto scroll-stable rounded-[inherit]', footer && 'rounded-b-none')}>
+      <table className={cn('w-full border-collapse text-sm', className)} style={minWidth ? { minWidth } : undefined} {...rest}>
+        {children}
+      </table>
+    </div>
+  );
   return (
     <div className={cn('rounded-lg border border-line bg-surface', wrapperClassName)}>
-      <div className={cn('overflow-x-auto scroll-stable rounded-[inherit]', footer && 'rounded-b-none')}>
-        <table className={cn('w-full border-collapse text-sm', className)} style={minWidth ? { minWidth } : undefined} {...rest}>
-          {children}
-        </table>
-      </div>
+      {edgeFade ? (
+        <div className={cn('relative rounded-[inherit]', footer && 'rounded-b-none', EDGE_FADE)}>{scroller}</div>
+      ) : (
+        scroller
+      )}
       {footer && <div className="border-t border-line px-4 py-2.5 text-xs text-ink-3">{footer}</div>}
     </div>
   );
@@ -905,11 +950,12 @@ export function TD({
   /** First-column identifier: mono 500 ink (strongest element in the row). */
   identifier?: boolean;
 }) {
+  // Mono cells never wrap: an AWB or a figure split across lines breaks the manifest alignment.
   return (
     <td
       className={cn(
         'h-11 px-3 align-middle text-ink-2 first:pl-4 last:pr-4',
-        (mono || numeric || identifier) && 'font-mono text-[12.5px] tracking-[-0.01em] text-ink tnum',
+        (mono || numeric || identifier) && 'whitespace-nowrap font-mono text-[12.5px] tracking-[-0.01em] text-ink tnum',
         numeric && 'text-right',
         identifier && 'font-medium',
         align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : undefined,
@@ -1184,7 +1230,8 @@ export function SpecRow({
       )}
     >
       <dt className="text-ink-3">{label}</dt>
-      <dd className={cn('min-w-0 truncate text-ink', total && 'font-mono text-lg font-medium tnum')}>{children}</dd>
+      {/* Wraps instead of truncating so refs and timestamps stay readable in narrow columns; badges are nowrap and never break. */}
+      <dd className={cn('min-w-0 break-words text-ink', total && 'font-mono text-lg font-medium tnum')}>{children}</dd>
     </div>
   );
 }

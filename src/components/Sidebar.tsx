@@ -6,9 +6,32 @@ import { NAV_GROUPS, isActive } from '@/components/nav';
 import { BrandLockup, PoweredByOnda, RouteStrip } from '@/components/Brand';
 import { LogOutIcon } from '@/components/icons';
 
+/*
+  Nav item recipes (design-system 5.2), written out as literal strings so Tailwind's
+  scanner sees every class. The 8% tints use arbitrary alpha (`/[0.08]`): Tailwind 3.4's
+  opacity scale steps 0, 5, 10, 15, ... so a bare `/8` modifier emits no CSS at all and the
+  active tint silently disappeared. `/5` is a real step and stays as written.
+*/
+const NAV_ITEM_BASE =
+  'group relative flex h-8 items-center gap-2.5 rounded-md px-2 text-sm transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:justify-center md:px-0 lg:justify-start lg:px-2';
+
+// Active: 8% white tint, full-white 500 label, and the 2px white rule on the rail's left
+// edge (the item sits 12px inside the aside's px-3, so left-[-12px] lands on x=0).
+const NAV_ITEM_ACTIVE = `${NAV_ITEM_BASE} bg-sidebar-active/[0.08] font-medium text-sidebar-fg before:absolute before:left-[-12px] before:top-1.5 before:h-5 before:w-0.5 before:rounded-full before:bg-sidebar-fg`;
+
+const NAV_ITEM_IDLE = `${NAV_ITEM_BASE} text-sidebar-fg/60 hover:bg-sidebar-hover/5 hover:text-sidebar-fg/90`;
+
 // Graphite rail beside the operating panel. Rail mode (icons only) at md; full at lg.
-export function Sidebar({ userEmail }: { userEmail?: string | null }) {
-  const pathname = usePathname();
+export function Sidebar({
+  userEmail,
+  pathname: pathnameOverride,
+}: {
+  userEmail?: string | null;
+  /** Route to mark active; defaults to the live pathname (dev preview passes the mirrored route). */
+  pathname?: string;
+}) {
+  const livePathname = usePathname();
+  const pathname = pathnameOverride ?? livePathname;
 
   return (
     <aside className="flex w-[232px] shrink-0 flex-col bg-sidebar-bg px-3 pb-3 pt-3 md:w-14 lg:w-[232px]">
@@ -29,11 +52,7 @@ export function Sidebar({ userEmail }: { userEmail?: string | null }) {
                       href={href}
                       title={label}
                       aria-current={active ? 'page' : undefined}
-                      className={`group relative flex h-8 items-center gap-2.5 rounded-md px-2 text-sm transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:justify-center md:px-0 lg:justify-start lg:px-2 ${
-                        active
-                          ? 'bg-sidebar-active/8 font-medium text-sidebar-fg before:absolute before:left-[-12px] before:top-1.5 before:h-5 before:w-0.5 before:rounded-full before:bg-sidebar-fg'
-                          : 'text-sidebar-fg/60 hover:bg-sidebar-hover/5 hover:text-sidebar-fg/90'
-                      }`}
+                      className={active ? NAV_ITEM_ACTIVE : NAV_ITEM_IDLE}
                     >
                       <Icon
                         strokeWidth={active ? 1.75 : 1.5}
@@ -59,16 +78,16 @@ export function Sidebar({ userEmail }: { userEmail?: string | null }) {
           >
             {(userEmail?.[0] ?? '?').toUpperCase()}
           </div>
-          <div className="min-w-0 md:hidden lg:block">
+          <div className="min-w-0 flex-1 md:hidden lg:block">
             <div className="truncate text-xs font-medium text-sidebar-fg" title={userEmail ?? ''}>
               {userEmail ?? 'Not signed in'}
             </div>
-            <div className="text-2xs text-sidebar-fg/45">Operations</div>
+            <div className="truncate text-2xs text-sidebar-fg/45">Operations</div>
           </div>
-          <form action="/api/auth/signout" method="post" className="ml-auto md:hidden lg:block">
+          <form action="/api/auth/signout" method="post" className="ml-auto shrink-0 md:hidden lg:block">
             <button
               type="submit"
-              className="h-7 rounded-md px-2 text-xs text-sidebar-fg/60 transition-colors duration-100 hover:bg-sidebar-hover/5 hover:text-sidebar-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="h-7 shrink-0 whitespace-nowrap rounded-md px-2 text-xs text-sidebar-fg/60 transition-colors duration-100 hover:bg-sidebar-hover/5 hover:text-sidebar-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               Sign out
             </button>
@@ -84,7 +103,7 @@ export function Sidebar({ userEmail }: { userEmail?: string | null }) {
             <LogOutIcon />
           </button>
         </form>
-        <div className="flex items-center border-t border-sidebar-line/8 px-2 pt-2.5 md:justify-center lg:justify-start">
+        <div className="flex items-center border-t border-sidebar-line/[0.08] px-2 pt-2.5 md:justify-center lg:justify-start">
           <PoweredByOnda inverse compact />
         </div>
       </div>

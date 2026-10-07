@@ -3,7 +3,7 @@
 // Gated to non-production: the middleware lets /design-preview through outside
 // production, and this page 404s in production regardless.
 import { notFound } from 'next/navigation';
-import { Sidebar } from '@/components/Sidebar';
+import { AppShell } from '@/components/AppShell';
 import { OverviewView } from '@/components/views/OverviewView';
 import { TrackingView, type Tracked } from '@/components/views/TrackingView';
 import { BookingsView } from '@/components/views/BookingsView';
@@ -35,15 +35,13 @@ export const dynamic = 'force-dynamic';
 
 const PREVIEW_USER_EMAIL = 'kevin@topdoer.com';
 
-// Same shell markup as src/app/(dashboard)/layout.tsx, minus the auth lookup.
-function DashboardShell({ children }: { children: React.ReactNode }) {
+// The same AppShell src/app/(dashboard)/layout.tsx renders, minus the auth lookup.
+// `route` is the mirrored dashboard path so the rail and breadcrumb match production.
+function DashboardShell({ route, children }: { route: string; children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar userEmail={PREVIEW_USER_EMAIL} />
-      <main className="flex-1 overflow-x-hidden">
-        <div className="mx-auto max-w-6xl px-8 py-10">{children}</div>
-      </main>
-    </div>
+    <AppShell userEmail={PREVIEW_USER_EMAIL} pathname={route}>
+      {children}
+    </AppShell>
   );
 }
 
@@ -184,5 +182,5 @@ export default function DesignPreviewScreen({ params }: { params: { screen: stri
   const meta = PREVIEW_SCREENS.find((s) => s.key === screen)!;
   const content = renderScreen(screen);
 
-  return meta.shell ? <DashboardShell>{content}</DashboardShell> : <>{content}</>;
+  return meta.shell ? <DashboardShell route={meta.route}>{content}</DashboardShell> : <>{content}</>;
 }
