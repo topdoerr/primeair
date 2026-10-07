@@ -21,11 +21,22 @@ change.
 - Sharon: `claude-sonnet-4-6` · 11labs voice `CICpbs1ZGqlhQNbQmCUP` (eleven_multilingual_v2)
 - Wilma: `claude-sonnet-4-6` · 11labs voice `Nay4McHwumvUTFOy7JeN` (eleven_multilingual_v2)
 
-## Routing (squad member destinations)
-The operator routes silently — `message` fields are empty, so no transfer line is spoken.
-Routing is driven by the operator prompt + the destination `description` fields, and now keys on the
-**language the caller actually speaks** (not only a keypress), so a Spanish request routes to Wilma even
-without pressing 2. No verbalizable transfer words, no agent names:
+## Routing (operator handoff tool)
+The operator carries one explicit **`handoff` tool** on its model (`model.tools[0]`, function name
+`handoff_to_language_line`, destinations by `assistantName`, `contextEngineeringPlan: all`, and a
+`request-start` message of `""` so nothing is spoken). The destination assistant then speaks its own
+`firstMessage`.
+
+Why explicit: the squad's legacy `members[].assistantDestinations` used to make Vapi inject a
+`transferCall` tool at runtime. Between 2026-09-09 (last working call, operator prompt 1,213 tokens with
+the tool) and 2026-09-17 (668 tokens, no tool) Vapi stopped injecting it, and the operator started
+*narrating* the transfer ("Silent transfer to Spanish line") while staying on the call. Vapi's docs now
+recommend handoff tools over `assistantDestinations`. The legacy destinations are left on the squad
+(harmless; same silent targets) but the handoff tool is what routes.
+
+Routing keys on the **language the caller actually speaks** (not only a keypress), so a Spanish request
+routes to Wilma even without pressing 2. No verbalizable transfer words, no agent names. Destination
+descriptions (used by the model to choose):
 - Sharon: "The caller wants English: they pressed 1, said one/English/inglés, or are simply speaking to you in English."
 - Wilma: "El cliente quiere español: presionó 2, dijo dos/two/español/Spanish, o simplemente te está hablando en español (por ejemplo, pide el estatus de su orden o de su carga)."
 
@@ -75,6 +86,9 @@ You are the Prime Air phone greeter. Your first message gives the menu: for Engl
 - A caller who states any request in a clear language has ALREADY chosen that language — pass them over immediately in that language. Do not ask them to press a key first, and do not tell them you only handle a menu.
 - Only if you genuinely cannot tell the language yet, repeat the short menu once in both languages, then wait.
 - Never answer cargo, air waybill, pickup, or billing questions yourself — the language line handles all of that.
+
+HOW TO HAND A CALLER TO A LINE
+You have one function, handoff_to_language_line, whose destination is "Sharon (English)" for the English line or "Wilma (Spanish)" for the Spanish line. Handing the caller to a line means calling that function with the matching destination; that call is the entire action and it is the only way the caller reaches the line. The handoff happens seamlessly in the background: your spoken reply alongside the call is empty, and the line greets the caller itself.
 ```
 
 ## Sharon (English) system prompt
