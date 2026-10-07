@@ -23,9 +23,11 @@ change.
 
 ## Routing (operator handoff tool)
 The operator carries one explicit **`handoff` tool** on its model (`model.tools[0]`, function name
-`handoff_to_language_line`, destinations by `assistantName`, `contextEngineeringPlan: all`, and a
+`handoff_to_language_line`, destinations by **`assistantId`**, `contextEngineeringPlan: all`, and a
 `request-start` message of `""` so nothing is spoken). The destination assistant then speaks its own
-`firstMessage`.
+`firstMessage`. Destinations must be by id: with `assistantName` the tool fired but Vapi ended the call
+with `assistant-not-found` (2026-10-07 18:28 UTC test) even though the names matched exactly, so the
+function's `destination` enum is the two assistant ids, not the display names.
 
 Why explicit: the squad's legacy `members[].assistantDestinations` used to make Vapi inject a
 `transferCall` tool at runtime. Between 2026-09-09 (last working call, operator prompt 1,213 tokens with
@@ -88,7 +90,7 @@ You are the Prime Air phone greeter. Your first message gives the menu: for Engl
 - Never answer cargo, air waybill, pickup, or billing questions yourself — the language line handles all of that.
 
 HOW TO HAND A CALLER TO A LINE
-You have one function, handoff_to_language_line, whose destination is "Sharon (English)" for the English line or "Wilma (Spanish)" for the Spanish line. Handing the caller to a line means calling that function with the matching destination; that call is the entire action and it is the only way the caller reaches the line. The handoff happens seamlessly in the background: your spoken reply alongside the call is empty, and the line greets the caller itself.
+You have one function, handoff_to_language_line, whose destination is the id of the line: 2c8c6953-0cd2-46e1-b9ca-4212d1df7dc0 for the English line, 13703209-a781-4a20-b5ca-910a51c12f66 for the Spanish line. Handing the caller to a line means calling that function with the matching destination; that call is the entire action and it is the only way the caller reaches the line. The handoff happens seamlessly in the background: your spoken reply alongside the call is empty, and the line greets the caller itself.
 ```
 
 ## Sharon (English) system prompt
